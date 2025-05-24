@@ -33,12 +33,12 @@ The PantryPal backend follows the **Hexagonal Architecture** (also known as **Po
 
 This architecture organizes the codebase into clearly defined layers:
 
--   **Domain Layer**: Contains core business logic, such as managing pantry items, predicting expiry dates, and generating recipe recommendations.
+-   **Domain**: Contains core business logic, such as managing pantry items, predicting expiry dates, and generating recipe recommendations.
 -   **Ports**: Abstract interfaces that define how the domain interacts with external systems (e.g., LLMs, OCR engines, supermarket APIs).
 -   **Adapters**: Concrete implementations of those ports that connect the domain to real-world services like Groq (LLM), Tesseract (OCR), or mock supermarket APIs.
--   **Infrastructure Layer**: Handles persistence, database configuration, and other technical utilities.
--   **Application Layer**: Orchestrates domain logic and delegates tasks to ports and adapters via controllers.
--   **Interface Layer**: Exposes API endpoints via FastAPI and defines the system's external interaction points.
+-   **Infrastructure**: Handles persistence, database configuration, and other technical utilities.
+-   **Application**: Orchestrates domain logic and delegates tasks to ports and adapters via controllers.
+-   **API**: Exposes API endpoints via FastAPI and defines the system's external interaction points.
 
 This design allows us to:
 
@@ -103,6 +103,9 @@ pantrypal-backend/
 │       │   └── user.py
 │       └── main.py                 # FastAPI app entry point
 │
+├── playground/                    #  Internal tools and R&D (e.g., Streamlit UIs)
+│   └── pantrypal_streamlit_chatbot.py       # LLM-based recipe/chat prompt explorer
+|
 ├── tests/                       # Unit and integration tests
 │   ├── domain/
 │   ├── adapters/
@@ -113,17 +116,6 @@ pantrypal-backend/
 ├── requirements.txt
 └── .env
 ```
-
-### 📌 Layer Responsibility Summary
-
-| Layer              | Purpose                                            | Example File                                     |
-| ------------------ | -------------------------------------------------- | ------------------------------------------------ |
-| **Domain**         | Core logic and business rules                      | `models/pantry_item.py`, `pantry_service.py`     |
-| **Ports**          | Abstract interfaces for external systems           | `llm_client_port.py`, `receipt_parser_port.py`   |
-| **Adapters**       | Concrete implementations for external dependencies | `groq_adapter.py`, `tesseract_adapter.py`        |
-| **Infrastructure** | Database and config setup                          | `database.py`, `repository.py`                   |
-| **Application**    | Coordinates domain logic and adapters              | `chatbot_controller.py`, `receipt_controller.py` |
-| **API**            | FastAPI route handlers                             | `routers/chatbot.py`, `schemas/pantry.py`        |
 
 ---
 

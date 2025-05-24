@@ -1,18 +1,25 @@
-import streamlit as st
 import os
 from typing import Generator
+
+import streamlit as st
+from dotenv import load_dotenv
 from groq import Groq
 
-#Page set up
-st.set_page_config(page_icon="🧑‍🍳", layout="wide",
-                   page_title="PantryPals Recipe Helper")
+# Load environment variables from .env
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+# Page set up
+st.set_page_config(
+    page_icon="🧑‍🍳", layout="wide", page_title="PantryPals Recipe Helper"
+)
 
 st.title("PantryPals Recipe Helper")
-st.subheader("Let's Cook up some Recipes!", divider='rainbow', anchor = False)
+st.subheader("Let's Cook up some Recipes!", divider="rainbow", anchor=False)
 
-#Groq initialisation
+# Groq initialisation
 client = Groq(
-    api_key=st.secrets["GROQ_API_KEY"],
+    api_key=GROQ_API_KEY,
 )
 
 # Initialize chat history and selected model
@@ -25,21 +32,34 @@ if "selected_model" not in st.session_state:
 # Define model details
 models = {
     "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
-    "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
-    "llama-3.1-8b-instant" : {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
+    "llama-3.3-70b-versatile": {
+        "name": "LLaMA3.3-70b-versatile",
+        "tokens": 128000,
+        "developer": "Meta",
+    },
+    "llama-3.1-8b-instant": {
+        "name": "LLaMA3.1-8b-instant",
+        "tokens": 128000,
+        "developer": "Meta",
+    },
     "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
     "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
-    "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
+    "mixtral-8x7b-32768": {
+        "name": "Mixtral-8x7b-Instruct-v0.1",
+        "tokens": 32768,
+        "developer": "Mistral",
+    },
 }
 
 
 # --- Sidebar for Ingredients ---
 with st.sidebar:
     st.header("🍳 Pantry Input")
-    ingredients = st.text_area("Enter your ingredients (comma-separated)",
-                                placeholder="e.g. eggs, tomato, cheese, pasta")
+    ingredients = st.text_area(
+        "Enter your ingredients (comma-separated)",
+        placeholder="e.g. eggs, tomato, cheese, pasta",
+    )
     button = st.button("Suggest Recipe")
-    
 
     st.markdown("### 💡 Example Prompts")
     st.markdown("- What's a quick vegetarian dinner?")
@@ -48,7 +68,7 @@ with st.sidebar:
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
+    avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
@@ -63,15 +83,18 @@ def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
 def handle_prompt(prompt: str):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    with st.chat_message("user", avatar='👨‍💻'):
+    with st.chat_message("user", avatar="👨‍💻"):
         st.markdown(prompt)
 
     try:
         chat_completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+            messages=[
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
             max_tokens=32768,
-            stream=True
+            stream=True,
         )
 
         with st.chat_message("assistant", avatar="🤖"):
@@ -79,16 +102,22 @@ def handle_prompt(prompt: str):
             full_response = st.write_stream(chat_responses_generator)
 
         if isinstance(full_response, str):
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response}
+            )
         else:
             combined_response = "\n".join(str(item) for item in full_response)
-            st.session_state.messages.append({"role": "assistant", "content": combined_response})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": combined_response}
+            )
     except Exception as e:
         st.error(e, icon="🚨")
 
+
 # Handle sidebar recipe suggestion
 if button and ingredients.strip():
-    generated_prompt = f"I have the following ingredients: {ingredients.strip()}. Give me recipes using these ingredients?"
+    generated_prompt = f"I have the following ingredients: {ingredients.strip()}. "
+    +"Give me recipes using these ingredients?"
     handle_prompt(generated_prompt)
 
 # Handle chat input (main input box at bottom)
