@@ -25,7 +25,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# SQLite DB (if using local DB for development)
+# SQLite DB (local DB for development)
 *.sqlite3
 *.db
 
@@ -46,8 +46,5 @@ htmlcov/
 .mypy_cache/
 .pylint.d/
 
-# Jupyter Notebooks (if used during exploration)
-.ipynb_checkpoints/
-
-# Pydantic cache (if used with compiled models)
+# Pydantic cache (used with compiled models)
 __pydantic__/ 
