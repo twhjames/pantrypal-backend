@@ -63,13 +63,66 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Run the Application (Local Dev)
+### 3. Run the API Server Locally
+
+Start the FastAPI development server using Uvicorn:
 
 ```bash
 uvicorn main:app --reload
 ```
 
-- Open API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- This will start the backend API at: [http://localhost:8000](http://localhost:8000)
+- Access the interactive API docs (Swagger UI) at: [http://localhost:8000/docs](http://localhost:8000/docs)
+- For alternative ReDoc docs: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+### 4. Creating a Feature Branch
+
+To contribute a new feature or fix, follow this branching workflow:
+
+```bash
+# 1. Switch to the main branch and pull the latest changes
+git checkout main
+git pull origin main
+
+# 2. Create a new feature branch
+git checkout -b feature/your-feature-name
+```
+
+#### Branch Naming Conventions
+Use prefixes based on the purpose of your work:
+- `feature/` – for new features (e.g., `feature/recipe-recommender`)
+- `bugfix/` – for bug fixes (e.g., `bugfix/fix-expiry-date`)
+- `refactor/` – for internal code cleanup
+- `hotfix/` – for urgent production fixes
+
+#### After Making Changes
+
+```bash
+git add .
+git commit -m "feat: add recipe recommender logic"
+git push origin feature/your-feature-name
+```
+
+Then open a **Pull Request (PR)** to merge it into `main` branch.
+
+#### Git Commit Message Convention
+
+We use **semantic commit prefixes** to keep history clean and meaningful.
+
+| Prefix     | Use for...                                | Example                                 |
+|------------|--------------------------------------------|-----------------------------------------|
+| `feat:`    | A new feature                              | `feat: add LLaMA integration to chatbot` |
+| `fix:`     | A bug fix                                  | `fix: correct expiry prediction logic`  |
+| `refactor:`| Code restructuring, no feature or fix      | `refactor: move model logic to utils`   |
+| `docs:`    | Documentation-only changes                 | `docs: update README with new endpoints`|
+| `test:`    | Adding or updating tests                   | `test: add unit tests for pantry routes`|
+| `chore:`   | Misc tasks (e.g., lint, config, cleanup)   | `chore: update dependencies`            |
+
+This helps with:
+- Cleaner commit history
+- Easier changelogs
+- Better collaboration in PRs
+
 
 ---
 
@@ -106,7 +159,8 @@ This project is licensed under the **Apache 2.0 License**.
 
 ## 👥 Contributors
 
-- James Teo — Project Lead / Backend Developer
+- [James Teo — Full Stack Software Engineer](https://www.linkedin.com/in/twhjames/)
+- [Le Rui — Data Scientist](https://www.linkedin.com/in/le-rui-tay-7b6507272/)
 
 ---
 
