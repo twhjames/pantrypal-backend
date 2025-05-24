@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# SQLite DB (if using local DB for development)
+*.sqlite3
+*.db
+
+# Env files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Mypy & Pylint
+.mypy_cache/
+.pylint.d/
+
+# Jupyter Notebooks (if used during exploration)
+.ipynb_checkpoints/
+
+# Pydantic cache (if used with compiled models)
+__pydantic__/ 
