@@ -47,4 +47,4 @@ htmlcov/
 .pylint.d/
 
 # Pydantic cache (used with compiled models)
-__pydantic__/ 
+__pydantic__/
