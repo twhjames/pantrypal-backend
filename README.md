@@ -127,7 +127,7 @@ pantrypal-backend/
 
 ---
 
-## 🧑‍💻 Developer Guide
+## ⚙️ Developer Setup
 
 ### 1. Setup Virtual Environment
 
@@ -154,7 +154,52 @@ uvicorn pantrypal_core_api.api.main:app --reload
 -   Access the interactive API docs (Swagger UI) at: [http://localhost:8000/docs](http://localhost:8000/docs)
 -   For alternative ReDoc docs: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-### 4. Creating a Feature Branch
+---
+
+## 📟 Code Quality & Tooling
+
+This project uses the following tools to ensure consistent code style and quality:
+
+-   **black**: Code formatter
+-   **flake8**: Linter for style and logical issues
+-   **isort**: Automatically sorts and groups imports
+-   **pre-commit**: Runs formatting and linting checks automatically before each commit
+
+### Setup Steps
+
+1. **Install the required tools**:
+
+```bash
+pip install black flake8 isort pre-commit
+```
+
+2. **Set up the pre-commit hook**:
+
+A `.pre-commit-config.yaml` file is included at the project root. To enable the hook:
+
+```bash
+pre-commit install
+```
+
+3. **(Optional) Run all checks manually**:
+
+```bash
+pre-commit run --all-files
+```
+
+### Configuration Files
+
+-   `pyproject.toml`: Configuration for `black` and `isort`
+-   `.flake8`: Configuration for `flake8`
+-   `.pre-commit-config.yaml`: Defines pre-commit hook rules and tools
+
+These checks run automatically each time you commit, helping enforce code quality and consistency across the project.
+
+---
+
+## 🧑‍💻 Developer Guide
+
+### Branching Strategy
 
 To contribute a new feature or fix, follow this branching workflow:
 
@@ -223,47 +268,6 @@ This helps with:
 ```bash
 pytest
 ```
-
----
-
-## 📟 Developer Environment & Code Quality Setup
-
-This project uses the following tools to ensure consistent code style and quality:
-
--   **black**: Code formatter
--   **flake8**: Linter for style and logical issues
--   **isort**: Automatically sorts and groups imports
--   **pre-commit**: Runs formatting and linting checks automatically before each commit
-
-### ⚙️ Setup Steps
-
-1. **Install the required tools**:
-
-```bash
-pip install black flake8 isort pre-commit
-```
-
-2. **Set up the pre-commit hook**:
-
-A `.pre-commit-config.yaml` file is included at the project root. To enable the hook:
-
-```bash
-pre-commit install
-```
-
-3. **(Optional) Run all checks manually**:
-
-```bash
-pre-commit run --all-files
-```
-
-### 🧰 Configuration Files
-
--   `pyproject.toml`: Configuration for `black` and `isort`
--   `.flake8`: Configuration for `flake8`
--   `.pre-commit-config.yaml`: Defines pre-commit hook rules and tools
-
-These checks run automatically each time you commit, helping enforce code quality and consistency across the project.
 
 ---
 
