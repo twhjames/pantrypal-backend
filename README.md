@@ -29,22 +29,23 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 
 ## 🧱 Software Architecture
 
-The PantryPal backend follows the **Hexagonal Architecture** (also known as **Ports and Adapters**) pattern to ensure modularity, testability, and separation of concerns.
+The PantryPal backend follows the **Hexagonal Architecture** (also known as **Ports and Adapters**) pattern to ensure modularity, testability, and clear separation of concerns. It is organized around feature-first modules (e.g., `hims`, `chatbot`) and cleanly separates the business logic from infrastructure code.
 
-This architecture organizes the codebase into clearly defined layers:
+The key architectural layers include:
 
--   **Domain**: Contains core business logic, such as managing pantry items, predicting expiry dates, and generating recipe recommendations.
--   **Ports**: Abstract interfaces that define how the domain interacts with external systems (e.g., LLMs, OCR engines, supermarket APIs).
--   **Adapters**: Concrete implementations of those ports that connect the domain to real-world services like Groq (LLM), Tesseract (OCR), or mock supermarket APIs.
--   **Infrastructure**: Handles persistence, database configuration, and other technical utilities.
--   **Application**: Orchestrates domain logic and delegates tasks to ports and adapters via controllers.
--   **API**: Exposes API endpoints via FastAPI and defines the system's external interaction points.
+-   **Core (Domain Layer)**: Contains the business logic and service rules for each feature. It defines abstract interfaces (ports) to interact with external systems or infrastructure without depending on specific implementations.
+-   **Ports**: Abstract interfaces used by services to access databases, LLMs, OCR tools, or other external systems.
+-   **Adapters**: Concrete implementations of ports — such as SQLAlchemy accessors, Groq LLM clients, or OCR adapters.
+-   **Application (Controllers)**: Use-case coordinators that bridge the HTTP layer and the core services. These do request handling, validation, and service orchestration.
+-   **API Layer (Routers and Schemas)**: Defines FastAPI routes and Pydantic schemas used for request and response validation.
+-   **Infrastructure Layer**: Shared utilities such as database session management, configuration loading, and logging.
+-   **Playground**: Internal scripts and UI prototypes for LLM prompt engineering and R&D (e.g., Streamlit chatbot).
 
-This design allows us to:
+This modular design allows for:
 
--   Easy substitution of external services without impacting core logic (e.g., swap Tesseract for Google Vision)
--   Reusability of domain logic across different interfaces (e.g., CLI, gRPC)
--   Easier unit testing with decoupled dependencies
+-   Easy substitution of adapters (e.g., replacing Tesseract with Google Vision API)
+-   Reuse of core logic across APIs, CLIs, or background jobs
+-   Simplified unit testing by mocking ports during test execution
 
 ---
 
@@ -52,69 +53,52 @@ This design allows us to:
 
 ```
 pantrypal-backend/
-├── app/
-│   ├── __init__.py
+├── src/
 │
-│   ├── domain/
-│   │   ├── models/                  # SQLAlchemy models (DB tables)
-│   │   │   ├── __init__.py
-│   │   │   ├── pantry_item.py
-│   │   │   ├── receipt.py
-│   │   │   └── user.py
-│   │   ├── services/                # Business logic (use cases)
-│   │   │   ├── pantry_service.py         # Inventory management logic
-│   │   │   ├── recommendation_service.py # Recipe generation logic
-│   │   │   └── chatbot_service.py        # Conversation flow logic
-│   │   └── ports/                   # Abstract Interfaces
-│   │       ├── receipt_parser_port.py    # Interface for OCR service
-│   │       ├── llm_client_port.py        # Interface for LLM
-│   │       └── supermarket_client_port.py# Interface for supermarket sync
+│   ├── core/                                # Feature-agnostic domain logic and abstract contracts
+│   │   ├── hims/                            # Home Inventory Management System domain layer
+│   │   │   ├── accessors/                   # DB access interfaces (ports) for inventory
+│   │   │   └── services/                    # Business logic for pantry management
+│   │   └── chatbot/                         # Chatbot domain logic and interfaces
+│   │       ├── ports/                       # LLM communication interfaces
+│   │       └── services/                    # Prompt orchestration and session logic
 │
-│   ├── adapters/                 # External implementations
-│   │   ├── ocr/                  # OCR engines
-│   │   │   └── tesseract_adapter.py
-│   │   ├── llm/                  # LLM providers
-│   │   │   ├── base.py           # Base LLM client interface
-│   │   │   ├── groq_adapter.py   # Groq-specific implementation
-│   │   │   └── openai_adapter.py # Optional OpenAI implementation
-│   │   └── supermarket/          # External/Mock supermarket systems
-│   │       └── mock_api_adapter.py
+│   ├── pantrypal_api/                       # Framework-specific and implementation logic
+│   │   ├── hims/                            # HIMS FastAPI feature implementation
+│   │   │   ├── routers/                     # Route definitions (e.g., /pantry/items)
+│   │   │   ├── schemas/                     # Pydantic models for request/response validation
+│   │   │   ├── controllers/                 # Request coordination and service delegation
+│   │   │   ├── accessors/                   # Concrete DB implementations (e.g., SQLAlchemy)
+│   │   │   └── adapters/                    # External tools (OCR, supermarket APIs)
+│   │   └── chatbot/                         # Chatbot API and integration logic
+│   │       ├── routers/                     # Chatbot-related FastAPI routes
+│   │       ├── schemas/                     # Pydantic request/response models
+│   │       ├── controllers/                 # Input/output coordination with core logic
+│   │       ├── accessors/                   # Groq or other LLM implementations
+│   │       └── adapters/                    # Prompt templates and transformation tools
+│   │   └── main.py                          # Application entry point with FastAPI setup
+│   |
+│   └── infrastructure/                      # Shared, low-level technical concerns
 │
-│   ├── infrastructure/          # Database and shared utilities
-│   │   ├── database.py
-│   │   └── repository.py
+├── playground/                              # Internal tools and R&D prototypes
+│   └── pantrypal_streamlit_chatbot.py       # Streamlit UI for recipe and chat testing
 │
-│   ├── application/             # Use case coordination (controllers)
-│   │   └── controllers/
-│   │       ├── pantry_controller.py
-│   │       ├── receipt_controller.py
-│   │       ├── recommender_controller.py
-│   │       └── chatbot_controller.py
+├── tests/                                   # Automated tests for core and API logic
+│   ├── hims/                                # HIMS-related test suites
+│   │   ├── services/                        # Test pantry service logic
+│   │   ├── accessors/                       # Test DB interactions
+│   │   └── controllers/                     # Test API-level controller logic
+│   └── chatbot/                             # Chatbot-related test suites
+│       ├── services/                        # Test chatbot prompt/session logic
+│       ├── accessors/                       # Test LLM access implementations
+│       └── controllers/                     # Test chatbot controller orchestration
 │
-│   └── api/
-│       ├── routers/                # FastAPI routes
-│       │   ├── pantry.py
-│       │   ├── receipt.py
-│       │   ├── recommend.py
-│       │   └── chatbot.py
-│       ├── schemas/                # Pydantic schemas (API contracts)
-│       │   ├── pantry.py
-│       │   ├── receipt.py
-│       │   └── user.py
-│       └── main.py                 # FastAPI app entry point
-│
-├── playground/                    #  Internal tools and R&D (e.g., Streamlit UIs)
-│   └── pantrypal_streamlit_chatbot.py       # LLM-based recipe/chat prompt explorer
-|
-├── tests/                       # Unit and integration tests
-│   ├── domain/
-│   ├── adapters/
-│   └── routers/
-│
+├── .env                                     # Runtime environment variables
 ├── .gitignore
-├── README.md
+├── .pre-commit-config.yaml                  # Git hook configuration for formatting/linting
+├── pyproject.toml                           # Tool configuration (e.g., black, isort)
 ├── requirements.txt
-└── .env
+└── README.md
 ```
 
 ---
@@ -139,7 +123,7 @@ pip install -r requirements.txt
 Start the FastAPI development server using Uvicorn:
 
 ```bash
-uvicorn pantrypal_core_api.api.main:app --reload
+uvicorn pantrypal_api.main:app --reload
 ```
 
 -   This will start the backend API at: [http://localhost:8000](http://localhost:8000)
@@ -204,16 +188,15 @@ git pull origin main
 git checkout -b feature/your-feature-name
 ```
 
-#### Branch Naming Conventions
+### Branch Naming Conventions
 
 Use prefixes based on the purpose of your work:
 
 -   `feature/` – for new features (e.g., `feature/recipe-recommender`)
 -   `bugfix/` – for bug fixes (e.g., `bugfix/fix-expiry-date`)
 -   `refactor/` – for internal code cleanup
--   `hotfix/` – for urgent production fixes
 
-#### After Making Changes
+### After Making Changes
 
 ```bash
 git add .
@@ -223,7 +206,7 @@ git push origin feature/your-feature-name
 
 Then open a **Pull Request (PR)** to merge it into `main` branch.
 
-#### Git Commit Message Convention
+### Git Commit Message Convention
 
 We use **semantic commit prefixes** to keep history clean and meaningful.
 
