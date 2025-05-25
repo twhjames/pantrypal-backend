@@ -2,8 +2,7 @@ from fastapi import FastAPI
 
 app = FastAPI(
     title="PantryPal API",
-    description="Smart pantry assistant backend with inventory, "
-    + "recipe, and chatbot support",
+    description="Smart pantry assistant backend with inventory, recipe, and chatbot support",
     version="1.0.0",
 )
 
