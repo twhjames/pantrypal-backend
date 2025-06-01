@@ -1,0 +1,115 @@
+# 📦 Alembic Migrations
+
+This directory contains the Alembic environment for managing database schema migrations in the **PantryPal** backend. Alembic tracks and applies structural changes to the database over time based on SQLAlchemy models.
+
+---
+
+## 🛠️ Directory Structure
+
+```
+alembic/
+├── versions/                # Auto-generated migration scripts
+├── env.py                   # Alembic configuration script
+├── script.py.mako           # Template for migration file generation
+└── README
+alembic.ini                  # Global Alembic settings
+```
+
+---
+
+## ⚙️ Configuration
+
+PantryPal uses an async database driver for the FastAPI app (`sqlite+aiosqlite`) but Alembic requires a **sync driver**. To support both, we define **two environment variables**:
+
+| Variable               | Purpose                 | Example                              |
+| ---------------------- | ----------------------- | ------------------------------------ |
+| `DATABASE_URL`         | Used by FastAPI (async) | `sqlite+aiosqlite:///./pantrypal.db` |
+| `ALEMBIC_DATABASE_URL` | Used by Alembic (sync)  | `sqlite:///./pantrypal.db`           |
+
+In `env.py`, Alembic loads `.env` and uses the sync version:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+url = os.getenv("ALEMBIC_DATABASE_URL")
+```
+
+> ✅ Keep `alembic/` outside the main app (`src/`) to avoid tight coupling between migrations and business logic.
+
+---
+
+## 🚀 Generating Migrations
+
+1. **Define or update models** in `src/pantrypal_api/<feature>/models.py`.
+
+2. **Register the model** in `src/pantrypal_api/models.py` to ensure Alembic can detect it:
+
+```
+from src/pantrypal_api.<feature>.models import *  # noqa
+```
+
+3. **Create the migration**:
+
+```
+alembic revision --autogenerate -m "add <table-name> table"
+```
+
+4. **Apply the migration**:
+
+```
+alembic upgrade head
+```
+
+---
+
+## 🔁 Common Commands
+
+| Command                     | Description                      |
+| --------------------------- | -------------------------------- |
+| `alembic revision -m "..."` | Create a new migration script    |
+| `alembic upgrade head`      | Apply all pending migrations     |
+| `alembic downgrade -1`      | Revert the most recent migration |
+| `alembic current`           | Show the current schema revision |
+| `alembic history`           | View full migration history      |
+
+---
+
+## 📁 Version Scripts
+
+Auto-generated migration files are stored in:
+
+```
+alembic/versions/
+```
+
+Each file includes `upgrade()` and `downgrade()` functions to apply or undo schema changes.
+
+---
+
+## 🧠 Tips
+
+-   Alembic uses `target_metadata` from `src/core/base/models.py`. Keep this file in sync with all ORM models.
+-   Always **review generated scripts** before applying them — especially when using `--autogenerate`.
+-   Keep the migration history clean and descriptive using consistent commit messages.
+
+---
+
+## ✅ Example Migration Workflow
+
+```
+# Make code changes to models
+vim src/pantrypal_api/chatbot/models.py
+
+# Generate the migration
+alembic revision --autogenerate -m "add chatbot history table"
+
+# Apply it to the dev DB
+alembic upgrade head
+```
+
+---
+
+## 📬 Issues or Help
+
+For issues related to migrations, raise a ticket at:
+[https://github.com/twhjames/pantrypal-backend/issues](https://github.com/twhjames/pantrypal-backend/issues)

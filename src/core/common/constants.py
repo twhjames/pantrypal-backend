@@ -1,0 +1,19 @@
+from decimal import Decimal
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+
+class SecretKey(Enum):
+    DATABASE_URL = "DATABASE_URL"
+    GROQ_API_KEY = "GROQ_API_KEY"
+    CHATBOT_MODEL = "CHATBOT_MODEL"
+    CHATBOT_MAX_TOKENS = "CHATBOT_MAX_TOKENS"
+    CHATBOT_MAX_CHAT_HISTORY = "CHATBOT_MAX_CHAT_HISTORY"
+
+
+SINGLE_VALUE_JSON_FIELD_TYPES = Optional[Union[str, int, float, Decimal, bool]]
+JSON_FIELD_OPTION_TYPES = Union[
+    Dict[Any, Any],
+    List[SINGLE_VALUE_JSON_FIELD_TYPES],
+    SINGLE_VALUE_JSON_FIELD_TYPES,
+]

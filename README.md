@@ -6,6 +6,24 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 
 ---
 
+## 📚 Table of Contents
+
+-   [🚀 Features](#-features)
+-   [🛠️ Tech Stack](#️-tech-stack)
+-   [🧱 Software Architecture](#-software-architecture)
+-   [📁 Project Structure Overview](#-project-structure-overview)
+-   [⚙️ Developer Setup](#️-developer-setup)
+-   [🔐 Environment Variables](#️-environment-variables)
+-   [🧑‍💻 Developer Guide](#-developer-guide)
+-   [📦 API Endpoints](#-api-endpoints)
+-   [🧪 Running Tests](#-running-tests)
+-   [✨ Future Improvements](#-future-improvements)
+-   [📄 License](#-license)
+-   [👥 Contributors](#-contributors)
+-   [📬 Feedback / Issues](#-feedback--issues)
+
+---
+
 ## 🚀 Features
 
 -   📦 Inventory Management (Home Inventory Management System - HIMS)
@@ -19,11 +37,13 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 | Layer              | Technology                              |
 | ------------------ | --------------------------------------- |
 | Framework          | FastAPI (Python 3.12+)                  |
-| Database           | SQLite (dev)                            |
+| Database           | SQLite (development)                    |
 | ORM                | SQLAlchemy                              |
 | Recommender Engine | LLaMA (local, llama.cpp or HuggingFace) |
 | API Documentation  | Swagger (auto-generated)                |
 | Testing            | pytest                                  |
+| Admin UI           | SQLAdmin                                |
+| Migration Tool     | Alembic                                 |
 
 ---
 
@@ -38,7 +58,6 @@ The key architectural layers include:
 -   **Adapters**: Concrete implementations of ports — such as SQLAlchemy accessors, Groq LLM clients, or OCR adapters.
 -   **Application (Controllers)**: Use-case coordinators that bridge the HTTP layer and the core services. These do request handling, validation, and service orchestration.
 -   **API Layer (Routers and Schemas)**: Defines FastAPI routes and Pydantic schemas used for request and response validation.
--   **Infrastructure Layer**: Shared utilities such as database session management, configuration loading, and logging.
 -   **Playground**: Internal scripts and UI prototypes for LLM prompt engineering and R&D (e.g., Streamlit chatbot).
 
 This modular design allows for:
@@ -49,57 +68,72 @@ This modular design allows for:
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure Overview
 
-```
-pantrypal-backend/
-├── src/
-│
-│   ├── core/                                # Feature-agnostic domain logic and abstract contracts
-│   │   ├── hims/                            # Home Inventory Management System domain layer
-│   │   │   ├── accessors/                   # DB access interfaces (ports) for inventory
-│   │   │   └── services/                    # Business logic for pantry management
-│   │   └── chatbot/                         # Chatbot domain logic and interfaces
-│   │       ├── ports/                       # LLM communication interfaces
-│   │       └── services/                    # Prompt orchestration and session logic
-│
-│   ├── pantrypal_api/                       # Framework-specific and implementation logic
-│   │   ├── hims/                            # HIMS FastAPI feature implementation
-│   │   │   ├── routers/                     # Route definitions (e.g., /pantry/items)
-│   │   │   ├── schemas/                     # Pydantic models for request/response validation
-│   │   │   ├── controllers/                 # Request coordination and service delegation
-│   │   │   ├── accessors/                   # Concrete DB implementations (e.g., SQLAlchemy)
-│   │   │   └── adapters/                    # External tools (OCR, supermarket APIs)
-│   │   └── chatbot/                         # Chatbot API and integration logic
-│   │       ├── routers/                     # Chatbot-related FastAPI routes
-│   │       ├── schemas/                     # Pydantic request/response models
-│   │       ├── controllers/                 # Input/output coordination with core logic
-│   │       ├── accessors/                   # Groq or other LLM implementations
-│   │       └── adapters/                    # Prompt templates and transformation tools
-│   │   └── main.py                          # Application entry point with FastAPI setup
-│   |
-│   └── infrastructure/                      # Shared, low-level technical concerns
-│
-├── playground/                              # Internal tools and R&D prototypes
-│   └── pantrypal_streamlit_chatbot.py       # Streamlit UI for recipe and chat testing
-│
-├── tests/                                   # Automated tests for core and API logic
-│   ├── hims/                                # HIMS-related test suites
-│   │   ├── services/                        # Test pantry service logic
-│   │   ├── accessors/                       # Test DB interactions
-│   │   └── controllers/                     # Test API-level controller logic
-│   └── chatbot/                             # Chatbot-related test suites
-│       ├── services/                        # Test chatbot prompt/session logic
-│       ├── accessors/                       # Test LLM access implementations
-│       └── controllers/                     # Test chatbot controller orchestration
-│
-├── .env                                     # Runtime environment variables
-├── .gitignore
-├── .pre-commit-config.yaml                  # Git hook configuration for formatting/linting
-├── pyproject.toml                           # Tool configuration (e.g., black, isort)
-├── requirements.txt
-└── README.md
-```
+The file structure reflects the Hexagonal Architecture principles outlined above, organizing code around feature modules (like `chatbot`, `hims`) and layering them across core domain logic, application services, and framework-specific interfaces.
+
+This overview helps you navigate the folders and understand where to implement or extend new features.
+
+### 🗂️ Folder Layout and Responsibilities
+
+| Path                                       | Description                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| `alembic/`                                 | Alembic migration environment and versioned DB migration scripts        |
+| `playground/`                              | R&D space: Streamlit prototypes, prompt engineering, and internal tools |
+| `src/app/`                                 | App setup: middleware, logging, global config, and FastAPI `main.py`    |
+| `src/core/common/`                         | Shared utilities: enums, constants, timestamps, validation helpers      |
+| `src/core/base/`                           | Abstract base domain models (`@dataclass`) used across features         |
+| `src/core/<feature>/services/`             | Pure business logic (no dependencies on web/infra)                      |
+| `src/core/<feature>/accessors/`            | Abstract interfaces (ports) for DB, LLM, or external systems            |
+| `src/core/<feature>/ports/`                | Outbound interfaces (e.g., LLM, OCR, file storage)                      |
+| `src/core/<feature>/specs.py`              | Data transfer specs (DTOs, query structures)                            |
+| `src/core/<feature>/models.py`             | Domain models (not tied to SQLAlchemy or DB)                            |
+| `src/core/<feature>/modules.py`            | DI bindings for each feature (e.g., `injector.Module`)                  |
+| `src/pantrypal_api/<feature>/routers/`     | FastAPI route definitions per feature                                   |
+| `src/pantrypal_api/<feature>/schemas/`     | Pydantic models for validation and serialization                        |
+| `src/pantrypal_api/<feature>/controllers/` | Controllers: bridge HTTP input with core services                       |
+| `src/pantrypal_api/<feature>/accessors/`   | Concrete DB access logic (e.g., SQLAlchemy ORM queries)                 |
+| `src/pantrypal_api/<feature>/adapters/`    | Prompt templates, response formatters, API adapters                     |
+| `src/pantrypal_api/admin/<feature>/`       | SQLAdmin UI: feature-specific admin panel views                         |
+| `src/pantrypal_api/base/`                  | SQLAlchemy base model declarations for infrastructure ORM               |
+| `tests/<feature>/`                         | Unit and integration tests for services, controllers, and adapters      |
+
+> 💡 Note: Alembic is intentionally placed outside the main application (`src/`) to treat it as a standalone dev tool.
+> 👉 This separation avoids coupling database migration logic with the core domain or dependency injection system, preserving Hexagonal Architecture principles and modularity.
+
+---
+
+### 📄 Top-Level Files
+
+| File                      | Description                                                          |
+| ------------------------- | -------------------------------------------------------------------- |
+| `.env`                    | Environment variables (e.g., DB URL, API keys) for local development |
+| `.flake8`                 | Linting rules for `flake8`                                           |
+| `.gitignore`              | Git version control exclusion rules                                  |
+| `.pre-commit-config.yaml` | Git pre-commit hook config (e.g., black, isort, flake8)              |
+| `LICENSE`                 | Project license (e.g., Apache 2.0)                                   |
+| `pantrypal.db`            | SQLite development DB (excluded in production)                       |
+| `pyproject.toml`          | Tool configuration: black, isort, pytest, etc.                       |
+| `README.md`               | Documentation entry point                                            |
+| `requirements.txt`        | Python package dependencies                                          |
+| `alembic.ini`             | Alembic configuration file (includes DB connection and script paths) |
+
+---
+
+### 📦 Module Responsibilities
+
+| Module          | Description                                                              |
+| --------------- | ------------------------------------------------------------------------ |
+| `chatbot`       | Handles LLM-based chat, recipe suggestions, and multi-turn conversations |
+| `hims`          | Manages pantry items, expiry prediction, and grocery-related logic       |
+| `configuration` | Stores runtime config values editable via the admin panel                |
+| `admin`         | SQLAdmin views for managing `chatbot` and `configuration` models         |
+| `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)       |
+| `common`        | Shared constants, enums, datetime helpers, and secret providers          |
+
+---
+
+> 🧠 Note: This structure scales well with additional modules and promotes separation of concerns across core logic, HTTP interface, and infrastructure.
 
 ---
 
@@ -123,12 +157,27 @@ pip install -r requirements.txt
 Start the FastAPI development server using Uvicorn:
 
 ```bash
-uvicorn pantrypal_api.main:app --reload
+uvicorn src.app.main:app --reload
 ```
 
 -   This will start the backend API at: [http://localhost:8000](http://localhost:8000)
 -   Access the interactive API docs (Swagger UI) at: [http://localhost:8000/docs](http://localhost:8000/docs)
 -   For alternative ReDoc docs: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+---
+
+## 🔐 Environment Variables
+
+PantryPal uses environment variables to configure database connections and external services. These variables should be defined in a `.env` file at the project root.
+
+| Variable                   | Description                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`             | Async database connection string for FastAPI app (e.g., `sqlite+aiosqlite:///./pantrypal.db`) |
+| `ALEMBIC_DATABASE_URL`     | Sync database connection string used by Alembic migrations (e.g., `sqlite:///./pantrypal.db`) |
+| `GROQ_API_KEY`             | API key for accessing Groq LLM provider                                                       |
+| `CHATBOT_MODEL`            | Name or ID of the LLM model to use (e.g., `gemma-9b-it`)                                      |
+| `CHATBOT_MAX_TOKENS`       | Maximum tokens allowed in the chatbot response (e.g., `1024`)                                 |
+| `CHATBOT_MAX_CHAT_HISTORY` | Number of recent messages to include in LLM prompt history (e.g., `5`)                        |
 
 ---
 
@@ -225,6 +274,95 @@ This helps with:
 -   Easier changelogs
 -   Better collaboration in PRs
 
+### Database Migrations
+
+PantryPal uses **Alembic** to manage database schema migrations in a version-controlled and reproducible manner.
+
+Alembic works in tandem with our SQLAlchemy models to track and apply schema changes over time.
+
+#### Adding a New Database Table
+
+To add a new table:
+
+1. **Define the model** in the relevant module:
+
+    - Add your SQLAlchemy model to `src/pantrypal_api/<feature>/models.py`
+    - Use standard SQLAlchemy syntax for fields and relationships
+
+2. **Register the model** for Alembic to detect:
+
+    - Import it into `src/pantrypal_api/models.py`:
+        ```python
+        from src.pantrypal_api.<feature>.models import *  # noqa
+        ```
+
+3. **Generate and apply the migration**:
+    ```bash
+    alembic revision --autogenerate -m "add <your-table-name> table"
+    alembic upgrade head
+    ```
+
+#### Common Alembic Commands
+
+-   Revert the most recent migration:
+
+    ```bash
+    alembic downgrade -1
+    ```
+
+-   Upgrade to a specific revision:
+    ```bash
+    alembic upgrade <revision_id>
+    ```
+
+> ⚠️ Alembic reads metadata from `src/core/base/models.py` via `target_metadata` in `env.py`.
+> ✅ Ensure all models are imported into `src/pantrypal_api/models.py` so Alembic can detect them.
+> 📁 Migration scripts are stored in the `alembic/versions/` directory.
+
+#### 🧠 Why Two Environment Variables?
+
+PantryPal uses **SQLAlchemy with an async driver (`sqlite+aiosqlite`)** for the FastAPI app, while **Alembic requires a sync engine**. To support both, we define **two separate environment variables**:
+
+```env
+# .env
+DATABASE_URL=sqlite+aiosqlite:///./pantrypal.db         # Used by the async FastAPI app
+ALEMBIC_DATABASE_URL=sqlite:///./pantrypal.db           # Used by Alembic (sync)
+```
+
+In `alembic/env.py`, we explicitly load `ALEMBIC_DATABASE_URL` for migrations:
+
+```python
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+ALEMBIC_DATABASE_URL = os.getenv("ALEMBIC_DATABASE_URL")
+```
+
+> ✅ This separation prevents runtime errors and ensures clean integration between Alembic and our async application architecture.
+
+### Admin Interface
+
+PantryPal includes a custom-styled **SQLAdmin** panel for managing core system resources through a user-friendly web interface.
+
+Once the FastAPI server is running, access the admin dashboard at:
+[http://localhost:8000/admin](http://localhost:8000/admin)
+
+The dashboard offers:
+
+-   A customizable landing page with card-based UI powered by Tabler CSS
+-   Intuitive CRUD operations for registered models like chat history and configuration values
+-   Model-level filtering, sorting, searching, and export capabilities
+-   An alternative to external tools like SQLite Browser or raw SQL queries
+
+Admin views are defined using SQLAdmin’s `ModelView` inheritance and registered via `PantryPalAdminSite` in:
+
+```bash
+src/pantrypal_api/admin/<feature>/admin.py
+```
+
+> 🧠 **Note**: All admin models inherit from a shared `PantryPalModelAdmin` base class that applies consistent UI behavior, searchability, and icon settings across the dashboard.
+
 ---
 
 ## 📦 API Endpoints
@@ -246,7 +384,7 @@ pytest
 
 ---
 
-### ✨ Future Improvements
+## ✨ Future Improvements
 
 -   Integrate Huawei Account Kit for user authentication
 -   Enhance recipe ranking with advanced ML techniques
