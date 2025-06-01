@@ -1,11 +1,11 @@
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 from src.core.chatbot.constants import ChatbotMessageRole
 
 
-@dataclass
-class ChatMessageSpec:
+class ChatMessageSpec(BaseModel):
     user_id: int
     role: ChatbotMessageRole
     content: str

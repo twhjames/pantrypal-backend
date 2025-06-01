@@ -33,6 +33,8 @@ class GroqChatbotProvider(IChatbotProvider):
         max_tokens = self.__get_max_tokens()
         client = Groq(api_key=api_key)
 
+        print(formatted_messages)
+
         try:
             response = client.chat.completions.create(
                 model=model, messages=formatted_messages, max_tokens=max_tokens
