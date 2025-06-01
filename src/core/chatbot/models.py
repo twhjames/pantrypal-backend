@@ -1,11 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-
+from src.core.base.models import PantryPalBaseModelDomain
 from src.core.chatbot.constants import ChatbotMessageRole
 
 
-class ChatHistoryDomain(BaseModel):
+class ChatHistoryDomain(PantryPalBaseModelDomain):
     user_id: int
     role: ChatbotMessageRole
     content: str

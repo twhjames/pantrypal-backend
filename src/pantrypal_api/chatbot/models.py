@@ -11,7 +11,6 @@ from src.pantrypal_api.common.utils import TimeUtils
 class ChatHistory(PantryPalBaseModel):
     __tablename__ = "chat_history"
 
-    id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
     role = Column(
         SQLAEnum(
@@ -28,6 +27,8 @@ class ChatHistory(PantryPalBaseModel):
 
     def to_domain(self) -> ChatHistoryDomain:
         return ChatHistoryDomain(
+            id=self.id,
+            created_at=self.created_at,
             user_id=self.user_id,
             role=self.role,
             content=self.content,

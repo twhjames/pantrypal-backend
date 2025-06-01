@@ -41,7 +41,7 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
             result = await session.execute(
                 select(ChatHistory)
                 .where(ChatHistory.user_id == user_id)
-                .order_by(ChatHistory.timestamp.desc())
+                .order_by(ChatHistory.created_at.desc())
                 .limit(limit)
             )
             messages = result.scalars().all()
