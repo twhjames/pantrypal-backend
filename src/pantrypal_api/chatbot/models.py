@@ -13,7 +13,14 @@ class ChatHistory(PantryPalBaseModel):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
-    role = Column(SQLAEnum(ChatbotMessageRole), nullable=False)
+    role = Column(
+        SQLAEnum(
+            ChatbotMessageRole,
+            values_callable=lambda x: [e.value for e in x],
+            native_enum=False,
+        ),
+        nullable=False,
+    )
     content = Column(Text)
     timestamp = Column(
         DateTime(timezone=True), nullable=False, default=lambda: TimeUtils.get_utc_now()

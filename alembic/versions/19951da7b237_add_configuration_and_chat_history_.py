@@ -1,8 +1,8 @@
 """add configuration and chat history tables
 
-Revision ID: df021b8130e0
+Revision ID: 19951da7b237
 Revises:
-Create Date: 2025-06-01 16:22:46.324629
+Create Date: 2025-06-01 21:42:54.958727
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "df021b8130e0"
+revision: str = "19951da7b237"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +27,13 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Integer(), nullable=True),
         sa.Column(
             "role",
-            sa.Enum("SYSTEM", "USER", "ASSISTANT", name="chatbotmessagerole"),
+            sa.Enum(
+                "system",
+                "user",
+                "assistant",
+                name="chatbotmessagerole",
+                native_enum=False,
+            ),
             nullable=False,
         ),
         sa.Column("content", sa.Text(), nullable=True),
