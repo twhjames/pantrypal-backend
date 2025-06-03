@@ -8,9 +8,9 @@ from src.core.chatbot.models import ChatHistoryDomain
 from src.core.chatbot.specs import ChatMessageSpec
 from src.core.common.constants import SecretKey
 from src.core.common.ports.secretkey_provider import ISecretProvider
+from src.core.common.utils import DateTimeUtils
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.chatbot.models import ChatHistory
-from src.pantrypal_api.common.utils import TimeUtils
 
 
 class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
@@ -55,5 +55,5 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
             user_id=spec.user_id,
             role=spec.role,
             content=spec.content,
-            timestamp=spec.timestamp or TimeUtils.get_utc_now(),
+            timestamp=spec.timestamp or DateTimeUtils.get_utc_now(),
         )

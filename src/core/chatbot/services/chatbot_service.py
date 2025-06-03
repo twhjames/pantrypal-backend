@@ -1,10 +1,12 @@
 from datetime import datetime
 
+from injector import inject
+
 from src.core.chatbot.accessors.chatbot_history_accessor import IChatbotHistoryAccessor
 from src.core.chatbot.constants import ChatbotMessageRole
 from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
 from src.core.chatbot.specs import ChatMessageSpec
-from src.pantrypal_api.common.utils import TimeUtils
+from src.core.common.utils import DateTimeUtils
 
 
 class ChatbotService:
@@ -16,6 +18,7 @@ class ChatbotService:
     - Contextual conversations with history persistence
     """
 
+    @inject
     def __init__(
         self,
         chatbot_provider: IChatbotProvider,
@@ -54,7 +57,7 @@ class ChatbotService:
         )
         reply = await self.chatbot_provider.handle_multi_turn(recent_messages)
 
-        reply_timestamp = TimeUtils.get_utc_now()
+        reply_timestamp = DateTimeUtils.get_utc_now()
         assistant_message = self.__create_chat_message_spec(
             user_id=message.user_id,
             role=ChatbotMessageRole.ASSISTANT,

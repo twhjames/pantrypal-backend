@@ -3,6 +3,10 @@ from fastapi.responses import HTMLResponse
 from sqladmin import Admin
 
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
+from src.pantrypal_api.admin.account.account_admin import (
+    AuthTokenAdmin,
+    UserAccountAdmin,
+)
 from src.pantrypal_api.admin.chatbot.chat_history_admin import ChatHistoryAdmin
 from src.pantrypal_api.admin.configuration.configuration_admin import ConfigurationAdmin
 
@@ -21,6 +25,8 @@ def setup_admin(app: FastAPI, db_provider: IDatabaseProvider):
     admin = PantryPalAdminSite(app, engine)
 
     # Register admin views
+    admin.add_view(UserAccountAdmin)
+    admin.add_view(AuthTokenAdmin)
     admin.add_view(ChatHistoryAdmin)
     admin.add_view(ConfigurationAdmin)
 

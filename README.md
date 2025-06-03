@@ -13,7 +13,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 -   [🧱 Software Architecture](#-software-architecture)
 -   [📁 Project Structure Overview](#-project-structure-overview)
 -   [⚙️ Developer Setup](#️-developer-setup)
--   [🔐 Environment Variables](#️-environment-variables)
+-   [🔐 Environment Variables](#-environment-variables)
 -   [🧑‍💻 Developer Guide](#-developer-guide)
 -   [📦 API Endpoints](#-api-endpoints)
 -   [🧪 Running Tests](#-running-tests)
@@ -29,6 +29,10 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 -   📦 Inventory Management (Home Inventory Management System - HIMS)
 -   🍽️ Recipe Recommendation Engine and Conversational Chatbot
     -   Powered by a local **LLaMA** model using a recipe and shelf-life dataset
+-   🔐 Account Management System
+    -   User registration, login, logout, update, and delete
+    -   Token-based authentication with JWT
+    -   Secure password hashing and session management
 
 ---
 
@@ -40,10 +44,11 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 | Database           | SQLite (development)                    |
 | ORM                | SQLAlchemy                              |
 | Recommender Engine | LLaMA (local, llama.cpp or HuggingFace) |
+| Authentication     | JWT (via `python-jose`) + bcrypt        |
 | API Documentation  | Swagger (auto-generated)                |
+| Admin Panel        | SQLAdmin + Tabler UI                    |
+| Migrations         | Alembic                                 |
 | Testing            | pytest                                  |
-| Admin UI           | SQLAdmin                                |
-| Migration Tool     | Alembic                                 |
 
 ---
 
@@ -122,14 +127,15 @@ This overview helps you navigate the folders and understand where to implement o
 
 ### 📦 Module Responsibilities
 
-| Module          | Description                                                              |
-| --------------- | ------------------------------------------------------------------------ |
-| `chatbot`       | Handles LLM-based chat, recipe suggestions, and multi-turn conversations |
-| `hims`          | Manages pantry items, expiry prediction, and grocery-related logic       |
-| `configuration` | Stores runtime config values editable via the admin panel                |
-| `admin`         | SQLAdmin views for managing `chatbot` and `configuration` models         |
-| `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)       |
-| `common`        | Shared constants, enums, datetime helpers, and secret providers          |
+| Module          | Description                                                                |
+| --------------- | -------------------------------------------------------------------------- |
+| `account`       | Manages user registration, login, update, deletion, and JWT authentication |
+| `admin`         | SQLAdmin views for managing `chatbot` and `configuration` models           |
+| `chatbot`       | Handles LLM-based chat, recipe suggestions, and multi-turn conversations   |
+| `configuration` | Stores runtime config values editable via the admin panel                  |
+| `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)         |
+| `common`        | Shared constants, enums, datetime helpers, and secret providers            |
+| `hims`          | Manages pantry items, expiry prediction, and grocery-related logic         |
 
 ---
 
@@ -170,14 +176,17 @@ uvicorn src.app.main:app --reload
 
 PantryPal uses environment variables to configure database connections and external services. These variables should be defined in a `.env` file at the project root.
 
-| Variable                   | Description                                                                                   |
-| -------------------------- | --------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`             | Async database connection string for FastAPI app (e.g., `sqlite+aiosqlite:///./pantrypal.db`) |
-| `ALEMBIC_DATABASE_URL`     | Sync database connection string used by Alembic migrations (e.g., `sqlite:///./pantrypal.db`) |
-| `GROQ_API_KEY`             | API key for accessing Groq LLM provider                                                       |
-| `CHATBOT_MODEL`            | Name or ID of the LLM model to use (e.g., `gemma-9b-it`)                                      |
-| `CHATBOT_MAX_TOKENS`       | Maximum tokens allowed in the chatbot response (e.g., `1024`)                                 |
-| `CHATBOT_MAX_CHAT_HISTORY` | Number of recent messages to include in LLM prompt history (e.g., `5`)                        |
+| Variable                    | Description                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| `DATABASE_URL`              | Async DB URL for FastAPI (e.g., `sqlite+aiosqlite:///./pantrypal.db`) |
+| `ALEMBIC_DATABASE_URL`      | Sync DB URL for Alembic (e.g., `sqlite:///./pantrypal.db`)            |
+| `GROQ_API_KEY`              | API key for Groq LLM provider                                         |
+| `CHATBOT_MODEL`             | Model name for Groq/Gemma/LLaMA                                       |
+| `CHATBOT_MAX_TOKENS`        | Max tokens in chatbot response (e.g., 1024)                           |
+| `CHATBOT_MAX_CHAT_HISTORY`  | Number of past messages to include in context                         |
+| `AUTH_SECRET_KEY`           | Secret key for signing JWT tokens                                     |
+| `AUTH_ALGORITHM`            | Algorithm for JWT signing (e.g., `HS256`)                             |
+| `AUTH_TOKEN_EXPIRY_MINUTES` | Token expiry duration in minutes (e.g., `1440`)                       |
 
 ---
 
@@ -367,12 +376,17 @@ src/pantrypal_api/admin/<feature>/admin.py
 
 ## 📦 API Endpoints
 
-| Method | Endpoint      | Description               |
-| ------ | ------------- | ------------------------- |
-| GET    | /pantry/items | Get all pantry items      |
-| POST   | /pantry/items | Add new item from receipt |
-| GET    | /recommend    | Get recipe suggestions    |
-| POST   | /chatbot      | Ask chatbot a question    |
+| Method | Endpoint           | Description                        |
+| ------ | ------------------ | ---------------------------------- |
+| POST   | /account/register  | Register a new user                |
+| POST   | /account/login     | Login with email and password      |
+| POST   | /account/logout    | Invalidate the current auth token  |
+| PUT    | /account/update    | Update user information            |
+| DELETE | /account/delete    | Delete the user account            |
+| POST   | /chatbot/recommend | Get one-shot recipe recommendation |
+| POST   | /chatbot/chat      | Start multi-turn conversation      |
+
+Visit `/docs` for full Swagger documentation.
 
 ---
 
