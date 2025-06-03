@@ -4,8 +4,8 @@ from sqlalchemy import Integer, Text
 
 from src.core.chatbot.constants import ChatbotMessageRole
 from src.core.chatbot.models import ChatHistoryDomain
+from src.core.common.utils import DateTimeUtils
 from src.pantrypal_api.base.models import PantryPalBaseModel
-from src.pantrypal_api.common.utils import TimeUtils
 
 
 class ChatHistory(PantryPalBaseModel):
@@ -22,7 +22,9 @@ class ChatHistory(PantryPalBaseModel):
     )
     content = Column(Text)
     timestamp = Column(
-        DateTime(timezone=True), nullable=False, default=lambda: TimeUtils.get_utc_now()
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: DateTimeUtils.get_utc_now(),
     )
 
     def to_domain(self) -> ChatHistoryDomain:

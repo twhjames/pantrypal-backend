@@ -4,7 +4,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.core.chatbot.constants import ChatbotMessageRole
-from src.pantrypal_api.common.utils import TimeUtils
+from src.core.chatbot.specs import ChatMessageSpec
+from src.core.common.utils import DateTimeUtils
 
 
 class Message(BaseModel):
@@ -39,8 +40,16 @@ class Message(BaseModel):
     @model_validator(mode="after")
     def set_timestamp_if_missing(self):
         if self.timestamp is None:
-            self.timestamp = TimeUtils.get_utc_now()
+            self.timestamp = DateTimeUtils.get_utc_now()
         return self
+
+    def to_spec(self) -> ChatMessageSpec:
+        return ChatMessageSpec(
+            user_id=self.user_id,
+            role=self.role,
+            content=self.content,
+            timestamp=self.timestamp or DateTimeUtils.get_utc_now(),
+        )
 
 
 class Messages(BaseModel):

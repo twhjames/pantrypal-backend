@@ -6,8 +6,8 @@ from pydantic import BaseModel
 
 class PantryPalBaseModelDomain(BaseModel):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
 
 class PantryPalMutableModelDomain(PantryPalBaseModelDomain):
-    updated_at: Optional[datetime]
+    updated_at: Optional[datetime] = None
