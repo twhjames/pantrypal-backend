@@ -15,19 +15,19 @@ class UserAccountAccessor(IUserAccountAccessor):
         self.db_provider = db_provider
 
     async def get_by_id(self, user_id: int) -> Optional[UserAccountDomain]:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             result = await db.execute(select(UserAccount).filter_by(id=user_id))
             record = result.scalar_one_or_none()
             return record.to_domain() if record else None
 
     async def get_by_email(self, email: str) -> Optional[UserAccountDomain]:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             result = await db.execute(select(UserAccount).filter_by(email=email))
             record = result.scalar_one_or_none()
             return record.to_domain() if record else None
 
     async def create_user(self, user: UserAccountDomain) -> UserAccountDomain:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             model = self.__to_model(user)
             db.add(model)
             await db.commit()
@@ -35,7 +35,7 @@ class UserAccountAccessor(IUserAccountAccessor):
             return model.to_domain()
 
     async def update_user(self, user: UserAccountDomain) -> UserAccountDomain:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             result = await db.execute(select(UserAccount).filter_by(id=user.id))
             model = result.scalar_one_or_none()
             if not model:
@@ -49,7 +49,7 @@ class UserAccountAccessor(IUserAccountAccessor):
             return model.to_domain()
 
     async def delete_by_id(self, user_id: int) -> None:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             await db.execute(
                 UserAccount.__table__.delete().where(UserAccount.id == user_id)
             )

@@ -14,10 +14,11 @@ class UserAccount(PantryPalBaseModel):
     def to_domain(self) -> UserAccountDomain:
         return UserAccountDomain(
             id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
             username=self.username,
             email=self.email,
             password_hash=self.password_hash,
-            created_at=self.created_at,
         )
 
 
@@ -32,10 +33,10 @@ class AuthToken(PantryPalBaseModel):
     def to_domain(self) -> AuthTokenDomain:
         return AuthTokenDomain(
             id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
             token=self.token,
             user_id=self.user_id,
             token_issued_at=self.token_issued_at,
             expires_at=self.expires_at,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
         )

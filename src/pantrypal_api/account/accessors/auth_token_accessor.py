@@ -13,7 +13,7 @@ class AuthTokenAccessor(IAuthTokenAccessor):
         self.db_provider = db_provider
 
     async def upsert(self, auth_token: AuthTokenDomain) -> AuthTokenDomain:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             result = await db.execute(
                 select(AuthToken).filter_by(user_id=auth_token.user_id)
             )
@@ -33,20 +33,20 @@ class AuthTokenAccessor(IAuthTokenAccessor):
             return record.to_domain()
 
     async def get_by_token(self, token: str) -> AuthTokenDomain | None:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             result = await db.execute(select(AuthToken).filter_by(token=token))
             record = result.scalar_one_or_none()
             return record.to_domain() if record else None
 
     async def delete_by_token(self, token: str) -> None:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             await db.execute(
                 AuthToken.__table__.delete().where(AuthToken.token == token)
             )
             await db.commit()
 
     async def delete_by_user_id(self, user_id: int) -> None:
-        async for db in self.db_provider.get_db():
+        async with self.db_provider.get_db() as db:
             await db.execute(
                 AuthToken.__table__.delete().where(AuthToken.user_id == user_id)
             )

@@ -26,18 +26,14 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
         self.secret_provider = secret_provider
 
     async def save_message(self, message: ChatMessageSpec) -> None:
-        async for session in self.db_provider.get_db():
+        async with self.db_provider.get_db() as session:
             chat_history_entry = self.__to_model(message)
             session.add(chat_history_entry)
-            try:
-                await session.commit()
-            except Exception as e:
-                await session.rollback()
-                raise e
+            await session.commit()
 
     async def get_recent_messages(self, user_id: int) -> List[ChatHistoryDomain]:
         limit = self.__get_max_chat_history()
-        async for session in self.db_provider.get_db():
+        async with self.db_provider.get_db() as session:
             result = await session.execute(
                 select(ChatHistory)
                 .where(ChatHistory.user_id == user_id)

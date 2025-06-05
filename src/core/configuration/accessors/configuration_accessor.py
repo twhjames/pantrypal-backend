@@ -6,5 +6,5 @@ from src.core.configuration.models import ConfigurationDomain
 
 class IConfigurationAccessor(ABC):
     @abstractmethod
-    def get_by_key(self, key: ConfigurationKey) -> ConfigurationDomain:
+    async def get_by_key(self, key: ConfigurationKey) -> ConfigurationDomain:
         raise NotImplementedError

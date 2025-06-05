@@ -48,7 +48,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 | API Documentation  | Swagger (auto-generated)                |
 | Admin Panel        | SQLAdmin + Tabler UI                    |
 | Migrations         | Alembic                                 |
-| Testing            | pytest                                  |
+| Testing            | pytest, pytest-asyncio, httpx, coverage |
 
 ---
 
@@ -392,9 +392,72 @@ Visit `/docs` for full Swagger documentation.
 
 ## 🧪 Running Tests
 
+PantryPal's test suite is built with `pytest`, reflecting the project’s Hexagonal Architecture. It supports async testing using `pytest-asyncio`, `AsyncMock`, and `httpx.AsyncClient`, with a focus on isolating and integrating each feature module.
+
+### 🗂️ Test Folder Overview
+
+Tests are organized by feature and layer, mirroring the structure of the source code in `src/`. This keeps domain logic, adapters, and HTTP-facing interfaces cleanly separated.
+
+| Module          | Layer         | Purpose                                               |
+| --------------- | ------------- | ----------------------------------------------------- |
+| `chatbot`       | `services`    | Unit tests for chatbot business logic                 |
+|                 | `accessors`   | Tests for chat history access layer (abstract or DB)  |
+|                 | `adapters`    | Integration tests for LLM adapters (e.g. Groq)        |
+|                 | `controllers` | API tests for `/chatbot` endpoints                    |
+| `account`       | `services`    | Auth logic (registration, login, token management)    |
+|                 | `accessors`   | Database interactions for user accounts               |
+|                 | `adapters`    | Password hashing, token encoding                      |
+|                 | `controllers` | API tests for `/account` routes                       |
+| `configuration` | `services`    | Runtime config update and retrieval logic             |
+|                 | `accessors`   | DB access for config values                           |
+| `common`        | `adapters`    | Secret key provider implementation                    |
+|                 | `utils`       | Tests for shared utilities (e.g., time, constants)    |
+| `storage`       | `adapters`    | Storage layer (e.g., relational DB access)            |
+| `admin`         | —             | Tests for SQLAdmin views and admin dashboard behavior |
+| `conftest.py`   | —             | Shared fixtures for app, DB, and client setup         |
+
+### ✅ Test Coverage
+
+-   **Unit Tests** focus on core business logic in `src/core/<feature>/services/`, using mocks for external dependencies such as accessors or LLMs.
+-   **Integration Tests** validate concrete implementations of ports/adapters (e.g., database accessors, Groq provider) to ensure proper system interactions.
+-   **API Tests** use `httpx.AsyncClient` to test FastAPI routes asynchronously, covering authentication, chatbot functionality, and configuration endpoints.
+-   **Admin Tests** verify that the SQLAdmin dashboard loads correctly and supports basic CRUD operations on registered models.
+
+### 🧪 Running the Test Suite
+
+To run all tests:
+
 ```bash
-pytest
+pytest tests
 ```
+
+To run a specific test module:
+
+```bash
+pytest tests/chatbot/services/test_chatbot_service.py
+```
+
+### 🔍 Additional Tools
+
+-   **Async tests** use `pytest-asyncio`
+-   **Test client** is defined in `conftest.py` using `httpx.AsyncClient` for full app-level testing
+-   **Coverage** reports can be generated using:
+
+```bash
+# 1. Run tests with coverage
+coverage run -m pytest tests/
+
+# 2. Show a terminal report
+coverage report
+
+# 3. Generate an HTML report
+coverage html
+
+# 4. Open it in browser
+open htmlcov/index.html
+```
+
+> All tests are designed to be modular, fast, and consistent with the project’s separation of concerns. They can be run independently of external services by mocking interfaces like storage and LLMs.
 
 ---
 

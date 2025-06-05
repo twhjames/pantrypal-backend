@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from injector import inject
@@ -20,7 +21,14 @@ class RelationalDatabaseProvider(IDatabaseProvider):
             bind=self.engine, class_=AsyncSession, expire_on_commit=False
         )
 
+    @asynccontextmanager
     async def get_db(self) -> AsyncGenerator[AsyncSession, None]:
         """Yield an async DB session."""
         async with self.async_session_factory() as session:
-            yield session
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
