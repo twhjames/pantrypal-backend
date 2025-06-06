@@ -6,7 +6,9 @@ from src.core.account.specs import RegisterUserSpec, UpdateUserSpec
 
 
 @pytest.mark.asyncio
-async def test_register_user_success(mock_user_account_accessor, mock_auth_provider):
+async def test_register_user_success(
+    mock_user_account_accessor, mock_auth_provider, mock_logging_provider
+):
     mock_user_account_accessor.get_by_email.return_value = None
     mock_auth_provider.get_hashed_password.return_value = "securehash"
 
@@ -15,7 +17,12 @@ async def test_register_user_success(mock_user_account_accessor, mock_auth_provi
     )
     mock_user_account_accessor.create_user.return_value = created_user
 
-    service = UserAccountService(mock_user_account_accessor, mock_auth_provider, None)
+    service = UserAccountService(
+        mock_user_account_accessor,
+        mock_auth_provider,
+        None,
+        mock_logging_provider,
+    )
 
     spec = RegisterUserSpec(username="newuser", email="a@x.com", password="securepw")
     user = await service.register_user(spec)
@@ -25,7 +32,9 @@ async def test_register_user_success(mock_user_account_accessor, mock_auth_provi
 
 
 @pytest.mark.asyncio
-async def test_update_user(mock_user_account_accessor, mock_auth_provider):
+async def test_update_user(
+    mock_user_account_accessor, mock_auth_provider, mock_logging_provider
+):
     user_before = UserAccountDomain(
         id=1, username="before", email="b@x.com", password_hash="old"
     )
@@ -37,7 +46,12 @@ async def test_update_user(mock_user_account_accessor, mock_auth_provider):
     mock_auth_provider.get_hashed_password.return_value = "newhash"
     mock_user_account_accessor.update_user.return_value = user_after
 
-    service = UserAccountService(mock_user_account_accessor, mock_auth_provider, None)
+    service = UserAccountService(
+        mock_user_account_accessor,
+        mock_auth_provider,
+        None,
+        mock_logging_provider,
+    )
     spec = UpdateUserSpec(username="after", email="a@x.com", password="newpassword")
     user = await service.update_user(1, spec)
 
@@ -46,14 +60,19 @@ async def test_update_user(mock_user_account_accessor, mock_auth_provider):
 
 
 @pytest.mark.asyncio
-async def test_delete_user(mock_user_account_accessor, mock_auth_token_accessor):
+async def test_delete_user(
+    mock_user_account_accessor, mock_auth_token_accessor, mock_logging_provider
+):
     user = UserAccountDomain(
         id=1, username="delete", email="d@x.com", password_hash="x"
     )
     mock_user_account_accessor.get_by_id.return_value = user
 
     service = UserAccountService(
-        mock_user_account_accessor, None, mock_auth_token_accessor
+        mock_user_account_accessor,
+        None,
+        mock_auth_token_accessor,
+        mock_logging_provider,
     )
     await service.delete_user(1)
 

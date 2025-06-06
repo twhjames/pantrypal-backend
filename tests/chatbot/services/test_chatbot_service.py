@@ -8,11 +8,14 @@ from src.core.chatbot.services.chatbot_service import ChatbotService
 
 @pytest.mark.asyncio
 async def test_get_first_recommendation(
-    mock_chatbot_provider, mock_chat_history_accessor
+    mock_chatbot_provider,
+    mock_chat_history_accessor,
+    mock_logging_provider,
 ):
     service = ChatbotService(
         chatbot_provider=mock_chatbot_provider,
         chat_history_accessor=mock_chat_history_accessor,
+        logging_provider=mock_logging_provider,
     )
 
     msg = ChatHistoryDomain(
@@ -24,11 +27,15 @@ async def test_get_first_recommendation(
     )
     result = await service.get_first_recommendation(msg)
 
-    assert result == "Mocked reply: Try making fried rice."
+    assert result == "Mocked reply"
 
 
 @pytest.mark.asyncio
-async def test_chat_with_context(mock_chatbot_provider, mock_chat_history_accessor):
+async def test_chat_with_context(
+    mock_chatbot_provider,
+    mock_chat_history_accessor,
+    mock_logging_provider,
+):
     mock_chat_history_accessor.get_recent_messages.return_value = [
         ChatHistoryDomain(
             id=1,
@@ -49,6 +56,7 @@ async def test_chat_with_context(mock_chatbot_provider, mock_chat_history_access
     service = ChatbotService(
         chatbot_provider=mock_chatbot_provider,
         chat_history_accessor=mock_chat_history_accessor,
+        logging_provider=mock_logging_provider,
     )
 
     new_msg = ChatHistoryDomain(
@@ -60,7 +68,7 @@ async def test_chat_with_context(mock_chatbot_provider, mock_chat_history_access
     )
     result = await service.chat_with_context(new_msg)
 
-    assert result == "Mocked chat: Here's what I suggest..."
+    assert result == "Mocked context reply"
     mock_chatbot_provider.handle_multi_turn.assert_awaited()
     mock_chat_history_accessor.get_recent_messages.assert_awaited_once()
     mock_chat_history_accessor.save_message.assert_awaited()
