@@ -9,7 +9,9 @@ from src.pantrypal_api.configuration.models import Configuration
 
 
 @pytest.mark.asyncio
-async def test_get_by_key_returns_config(mock_relational_database_provider, db_session):
+async def test_get_by_key_returns_config(
+    mock_relational_database_provider, db_session, mock_logging_provider
+):
     """
     Test that ConfigurationAccessor returns the correct configuration domain when the key exists.
     """
@@ -22,7 +24,11 @@ async def test_get_by_key_returns_config(mock_relational_database_provider, db_s
     )
     await db_session.commit()
 
-    accessor = ConfigurationAccessor(db_provider=mock_relational_database_provider)
+    accessor = ConfigurationAccessor(
+        db_provider=mock_relational_database_provider,
+        logging_provider=mock_logging_provider,
+    )
+
     result = await accessor.get_by_key(ConfigurationKey.NOTIFICATION_EMAIL_SENDER_NAME)
 
     assert result is not None
@@ -32,10 +38,15 @@ async def test_get_by_key_returns_config(mock_relational_database_provider, db_s
 
 
 @pytest.mark.asyncio
-async def test_get_by_key_returns_none_if_not_found(mock_relational_database_provider):
+async def test_get_by_key_returns_none_if_not_found(
+    mock_relational_database_provider, mock_logging_provider
+):
     """
     Test that ConfigurationAccessor returns None when the key does not exist.
     """
-    accessor = ConfigurationAccessor(db_provider=mock_relational_database_provider)
+    accessor = ConfigurationAccessor(
+        db_provider=mock_relational_database_provider,
+        logging_provider=mock_logging_provider,
+    )
     result = await accessor.get_by_key(ConfigurationKey.NOTIFICATION_EMAIL_SENDER)
     assert result is None

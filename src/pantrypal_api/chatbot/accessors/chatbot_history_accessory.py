@@ -9,6 +9,7 @@ from src.core.chatbot.specs import ChatMessageSpec
 from src.core.common.constants import SecretKey
 from src.core.common.ports.secretkey_provider import ISecretProvider
 from src.core.common.utils import DateTimeUtils
+from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.chatbot.models import ChatHistory
 
@@ -21,27 +22,49 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
         self,
         db_provider: IDatabaseProvider,
         secret_provider: ISecretProvider,
+        logging_provider: ILoggingProvider,
     ):
         self.db_provider = db_provider
         self.secret_provider = secret_provider
+        self.logging_provider = logging_provider
 
     async def save_message(self, message: ChatMessageSpec) -> None:
-        async with self.db_provider.get_db() as session:
-            chat_history_entry = self.__to_model(message)
-            session.add(chat_history_entry)
-            await session.commit()
+        try:
+            async with self.db_provider.get_db() as session:
+                chat_history_entry = self.__to_model(message)
+                session.add(chat_history_entry)
+                await session.commit()
+        except Exception as e:
+            self.logging_provider.error(
+                "Failed to save chatbot message",
+                extra_data={
+                    "user_id": message.user_id,
+                    "role": message.role.name,
+                    "error": str(e),
+                },
+                tag="ChatbotHistoryAccessor",
+            )
+            raise
 
     async def get_recent_messages(self, user_id: int) -> List[ChatHistoryDomain]:
-        limit = self.__get_max_chat_history()
-        async with self.db_provider.get_db() as session:
-            result = await session.execute(
-                select(ChatHistory)
-                .where(ChatHistory.user_id == user_id)
-                .order_by(ChatHistory.created_at.desc())
-                .limit(limit)
+        try:
+            limit = self.__get_max_chat_history()
+            async with self.db_provider.get_db() as session:
+                result = await session.execute(
+                    select(ChatHistory)
+                    .where(ChatHistory.user_id == user_id)
+                    .order_by(ChatHistory.created_at.desc())
+                    .limit(limit)
+                )
+                messages = result.scalars().all()
+            return [msg.to_domain() for msg in reversed(messages)]
+        except Exception as e:
+            self.logging_provider.error(
+                "Failed to fetch chatbot history",
+                extra_data={"user_id": user_id, "error": str(e)},
+                tag="ChatbotHistoryAccessor",
             )
-            messages = result.scalars().all()
-        return [msg.to_domain() for msg in reversed(messages)]
+            raise
 
     def __get_max_chat_history(self) -> int:
         return int(self.secret_provider.get_secret(SecretKey.CHATBOT_MAX_CHAT_HISTORY))

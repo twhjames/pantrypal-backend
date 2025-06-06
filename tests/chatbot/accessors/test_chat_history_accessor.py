@@ -20,14 +20,17 @@ def mock_valid_secret_key_provider():
     return provider
 
 
-# === Test saving a single message and retrieving it from the DB ===
+# Test saving a single message and retrieving it from the DB
 @pytest.mark.asyncio
 async def test_save_and_retrieve_single_message(
-    mock_relational_database_provider, mock_valid_secret_key_provider
+    mock_relational_database_provider,
+    mock_valid_secret_key_provider,
+    mock_logging_provider,
 ):
     accessor = ChatbotHistoryAccessor(
         db_provider=mock_relational_database_provider,
         secret_provider=mock_valid_secret_key_provider,
+        logging_provider=mock_logging_provider,
     )
 
     # Create a test message to save
@@ -52,11 +55,14 @@ async def test_save_and_retrieve_single_message(
 # Test saving multiple messages and retrieving them sorted by timestamp
 @pytest.mark.asyncio
 async def test_retrieve_multiple_messages_sorted_by_timestamp(
-    mock_relational_database_provider, mock_valid_secret_key_provider
+    mock_relational_database_provider,
+    mock_valid_secret_key_provider,
+    mock_logging_provider,
 ):
     accessor = ChatbotHistoryAccessor(
         db_provider=mock_relational_database_provider,
         secret_provider=mock_valid_secret_key_provider,
+        logging_provider=mock_logging_provider,
     )
 
     # Create multiple messages with increasing timestamps

@@ -9,7 +9,10 @@ from src.core.account.specs import LoginSpec
 
 @pytest.mark.asyncio
 async def test_login_success(
-    mock_auth_provider, mock_user_account_accessor, mock_auth_token_accessor
+    mock_auth_provider,
+    mock_user_account_accessor,
+    mock_auth_token_accessor,
+    mock_logging_provider,
 ):
     user = UserAccountDomain(
         id=1, username="test", email="test@example.com", password_hash="pass_hashed"
@@ -28,7 +31,10 @@ async def test_login_success(
     mock_auth_token_accessor.upsert.return_value = token
 
     service = AuthService(
-        mock_auth_provider, mock_user_account_accessor, mock_auth_token_accessor
+        mock_auth_provider,
+        mock_user_account_accessor,
+        mock_auth_token_accessor,
+        mock_logging_provider,
     )
     result = await service.login(LoginSpec(email="test@example.com", password="pass"))
 
@@ -37,7 +43,7 @@ async def test_login_success(
 
 
 @pytest.mark.asyncio
-async def test_logout_success(mock_auth_token_accessor):
+async def test_logout_success(mock_auth_token_accessor, mock_logging_provider):
     token = AuthTokenDomain(
         id=1,
         token="abc",
@@ -47,7 +53,7 @@ async def test_logout_success(mock_auth_token_accessor):
     )
     mock_auth_token_accessor.get_by_token.return_value = token
 
-    service = AuthService(None, None, mock_auth_token_accessor)
+    service = AuthService(None, None, mock_auth_token_accessor, mock_logging_provider)
     await service.logout("abc")
 
     mock_auth_token_accessor.delete_by_token.assert_called_once_with("abc")

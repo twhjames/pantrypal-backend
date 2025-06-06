@@ -7,8 +7,13 @@ from src.pantrypal_api.account.accessors.user_account_accessor import (
 
 
 @pytest.mark.asyncio
-async def test_create_and_get_user(mock_relational_database_provider):
-    accessor = UserAccountAccessor(db_provider=mock_relational_database_provider)
+async def test_create_and_get_user(
+    mock_relational_database_provider, mock_logging_provider
+):
+    accessor = UserAccountAccessor(
+        db_provider=mock_relational_database_provider,
+        logging_provider=mock_logging_provider,
+    )
 
     user = UserAccountDomain(
         id=1,
@@ -31,8 +36,11 @@ async def test_create_and_get_user(mock_relational_database_provider):
 
 
 @pytest.mark.asyncio
-async def test_update_user(mock_relational_database_provider):
-    accessor = UserAccountAccessor(db_provider=mock_relational_database_provider)
+async def test_update_user(mock_relational_database_provider, mock_logging_provider):
+    accessor = UserAccountAccessor(
+        db_provider=mock_relational_database_provider,
+        logging_provider=mock_logging_provider,
+    )
 
     user = UserAccountDomain(
         id=2,
@@ -55,8 +63,11 @@ async def test_update_user(mock_relational_database_provider):
 
 
 @pytest.mark.asyncio
-async def test_delete_user(mock_relational_database_provider):
-    accessor = UserAccountAccessor(db_provider=mock_relational_database_provider)
+async def test_delete_user(mock_relational_database_provider, mock_logging_provider):
+    accessor = UserAccountAccessor(
+        db_provider=mock_relational_database_provider,
+        logging_provider=mock_logging_provider,
+    )
 
     user = UserAccountDomain(
         id=3,

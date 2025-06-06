@@ -5,9 +5,8 @@ from src.core.account.ports.auth_provider import IAuthProvider
 from src.core.common.constants import SecretKey
 from src.pantrypal_api.account.adapters.auth_provider import AuthProvider
 
-# === Fixture: Secret Key Provider with Auth Settings ===
 
-
+# Fixture: Secret Key Provider with Auth Settings
 @pytest.fixture
 def mock_secret_key_provider_with_auth_secrets():
     """
@@ -26,12 +25,13 @@ def mock_secret_key_provider_with_auth_secrets():
     return CustomSecretKeyProvider()
 
 
-# === Test: Password Hashing & Verification ===
-
-
-def test_get_hashed_password_and_verify(mock_secret_key_provider_with_auth_secrets):
+# Test: Password Hashing & Verification
+def test_get_hashed_password_and_verify(
+    mock_secret_key_provider_with_auth_secrets, mock_logging_provider
+):
     provider: IAuthProvider = AuthProvider(
-        secret_provider=mock_secret_key_provider_with_auth_secrets
+        secret_provider=mock_secret_key_provider_with_auth_secrets,
+        logging_provider=mock_logging_provider,
     )
 
     raw_password = "my_password"
@@ -42,12 +42,13 @@ def test_get_hashed_password_and_verify(mock_secret_key_provider_with_auth_secre
     assert provider.verify_password("wrong_password", hashed) is False
 
 
-# === Test: Valid JWT Token Generation ===
-
-
-def test_generate_token_valid_jwt(mock_secret_key_provider_with_auth_secrets):
+# Test: Valid JWT Token Generation
+def test_generate_token_valid_jwt(
+    mock_secret_key_provider_with_auth_secrets, mock_logging_provider
+):
     provider: IAuthProvider = AuthProvider(
-        secret_provider=mock_secret_key_provider_with_auth_secrets
+        secret_provider=mock_secret_key_provider_with_auth_secrets,
+        logging_provider=mock_logging_provider,
     )
 
     user_id = 123
@@ -59,24 +60,23 @@ def test_generate_token_valid_jwt(mock_secret_key_provider_with_auth_secrets):
     assert "exp" in decoded
 
 
-# === Test: Missing Secret Key Should Raise Error ===
-
-
-def test_invalid_secret_key_raises():
+# Test: Missing Secret Key Should Raise Error
+def test_invalid_secret_key_raises(mock_logging_provider):
     class IncompleteSecretKeyProvider:
         def get_secret(self, key):
             return None  # Simulate missing secrets
 
-    provider = AuthProvider(secret_provider=IncompleteSecretKeyProvider())
+    provider = AuthProvider(
+        secret_provider=IncompleteSecretKeyProvider(),
+        logging_provider=mock_logging_provider,
+    )
 
     with pytest.raises(ValueError, match="AUTH_SECRET_KEY is missing"):
         provider.generate_token(user_id=1)
 
 
-# === Test: Invalid Expiry Format Should Raise Error ===
-
-
-def test_invalid_expiry_minutes_raises():
+# Test: Invalid Expiry Format Should Raise Error
+def test_invalid_expiry_minutes_raises(mock_logging_provider):
     class InvalidExpiryProvider:
         def get_secret(self, key):
             return {
@@ -85,7 +85,9 @@ def test_invalid_expiry_minutes_raises():
                 SecretKey.AUTH_TOKEN_EXPIRY_MINUTES: "invalid",  # Not an integer
             }.get(key)
 
-    provider = AuthProvider(secret_provider=InvalidExpiryProvider())
+    provider = AuthProvider(
+        secret_provider=InvalidExpiryProvider(), logging_provider=mock_logging_provider
+    )
 
     with pytest.raises(ValueError, match="Invalid AUTH_TOKEN_EXPIRY_MINUTES"):
         provider.generate_token(user_id=1)

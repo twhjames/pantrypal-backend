@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.app.main import app
+from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
+from src.core.common.ports.secretkey_provider import ISecretProvider
+from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.base.models import PantryPalBaseModel
 
@@ -27,6 +30,26 @@ This setup includes:
 # ===============================
 
 
+# Mock ILogginerProvider using MagicMock
+@pytest.fixture
+def mock_logging_provider():
+    return MagicMock(spec=ILoggingProvider)
+
+
+# Mock IDatabaseProvider using MagicMock with async get_db() support and injected logging provider
+@pytest_asyncio.fixture
+async def mock_relational_database_provider(db_session, mock_logging_provider):
+    provider = MagicMock(spec=IDatabaseProvider)
+
+    @asynccontextmanager
+    async def mock_get_db():
+        yield db_session
+
+    provider.get_db.side_effect = mock_get_db
+    provider.logging_provider = mock_logging_provider
+    return provider
+
+
 # Mock IAuthProvider using MagicMock since all methods are synchronous
 @pytest.fixture
 def mock_auth_provider():
@@ -41,21 +64,16 @@ def mock_auth_provider():
 # Mock IChatbotProvider for tests needing chatbot replies
 @pytest.fixture
 def mock_chatbot_provider():
-    provider = MagicMock()
-    provider.handle_single_turn = AsyncMock(
-        return_value="Mocked reply: Try making fried rice."
-    )
-    provider.handle_multi_turn = AsyncMock(
-        return_value="Mocked chat: Here's what I suggest..."
-    )
+    provider = MagicMock(spec=IChatbotProvider)
+    provider.handle_single_turn = AsyncMock(return_value="Mocked reply")
+    provider.handle_multi_turn = AsyncMock(return_value="Mocked context reply")
     return provider
 
 
 # Mock ISecretKeyProvider for JWT and config access
 @pytest.fixture
-def mock_secret_key_provider():
-    provider = MagicMock()
-    provider.get_secret.side_effect = lambda key: f"mock-secret-for-{key}"
+def mock_secret_key_provider(mock_logging_provider):
+    provider = MagicMock(spec=ISecretProvider)
     return provider
 
 
@@ -137,21 +155,6 @@ async def clean_all_tables(db_session):
     for table in reversed(PantryPalBaseModel.metadata.sorted_tables):
         await db_session.execute(table.delete())
     await db_session.commit()
-
-
-# Adapter wrapping DB session into a provider interface
-class MockRelationalDatabaseProvider(IDatabaseProvider):
-    def __init__(self, session: AsyncSession):
-        self._session = session
-
-    @asynccontextmanager
-    async def get_db(self):
-        yield self._session
-
-
-@pytest_asyncio.fixture
-async def mock_relational_database_provider(db_session):
-    return MockRelationalDatabaseProvider(db_session)
 
 
 # ===============================

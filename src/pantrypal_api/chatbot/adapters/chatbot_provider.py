@@ -8,14 +8,20 @@ from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
 from src.core.chatbot.specs import ChatMessageSpec
 from src.core.common.constants import SecretKey
 from src.core.common.ports.secretkey_provider import ISecretProvider
+from src.core.logging.ports.logging_provider import ILoggingProvider
 
 
 class GroqChatbotProvider(IChatbotProvider):
     """Handles interaction with Groq LLM for both single-turn and multi-turn chat."""
 
     @inject
-    def __init__(self, secret_provider: ISecretProvider):
+    def __init__(
+        self,
+        secret_provider: ISecretProvider,
+        logging_provider: ILoggingProvider,
+    ):
         self.secret_provider = secret_provider
+        self.logging_provider = logging_provider
 
     async def handle_single_turn(self, message: ChatMessageSpec) -> str:
         """Processes a single-turn message."""
@@ -44,7 +50,19 @@ class GroqChatbotProvider(IChatbotProvider):
             )
             return response.choices[0].message.content
         except BadRequestError as e:
+            self.logging_provider.error(
+                "Groq API BadRequestError",
+                extra_data={"error": str(e), "messages": formatted_messages},
+                tag="Groq",
+            )
             raise RuntimeError(f"Groq API call failed: {e}")
+        except Exception as e:
+            self.logging_provider.error(
+                "Unexpected error calling Groq",
+                extra_data={"error": str(e), "messages": formatted_messages},
+                tag="Groq",
+            )
+            raise
 
     def __format_message(self, message: ChatMessageSpec) -> Dict[str, str]:
         """Formats internal message spec into Groq-compatible format."""

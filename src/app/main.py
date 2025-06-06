@@ -1,16 +1,19 @@
 from fastapi import FastAPI
 
-from src.app.logging import setup_logging
 from src.app.middleware import setup_middlewares
 from src.app.router_setup import setup_routers
+from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.admin.admin import setup_admin
 from src.pantrypal_api.modules import injector
 
+# Inject logger
+logger = injector.get(ILoggingProvider)
+
 
 def create_app() -> FastAPI:
-    # Setup logging
-    setup_logging()
+    # Log application initialization
+    logger.info("Initializing PantryPal API server...", tag="Startup")
 
     # Initialize the FastAPI app
     app = FastAPI(
@@ -33,6 +36,9 @@ def create_app() -> FastAPI:
     # Register admin views using injected database provider
     db_provider = injector.get(IDatabaseProvider)
     setup_admin(app, db_provider)
+
+    # Log successful application setup
+    logger.info("PantryPal API setup completed", tag="Startup")
 
     return app
 

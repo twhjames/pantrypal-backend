@@ -1,12 +1,30 @@
 import os
 from typing import Optional
 
+from injector import inject
+
 from src.core.common.constants import SecretKey
 from src.core.common.ports.secretkey_provider import ISecretProvider
+from src.core.logging.ports.logging_provider import ILoggingProvider
 
 
 class EnvVariableSecretProvider(ISecretProvider):
+    @inject
+    def __init__(self, logging_provider: ILoggingProvider):
+        self.logging_provider = logging_provider
+
     def get_secret(
         self, key: SecretKey, default: Optional[str] = None
     ) -> Optional[str]:
-        return os.getenv(key.name, default)
+        value = os.getenv(key.name, default)
+        if value is None and self.logging_provider:
+            self.logging_provider.warning(
+                f"Missing environment variable for key: {key.name}", tag="Secrets"
+            )
+        elif default is not None and self.logging_provider:
+            self.logging_provider.info(
+                f"Using default value for missing key: {key.name}",
+                extra_data={"default": default},
+                tag="Secrets",
+            )
+        return value

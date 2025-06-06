@@ -1,5 +1,5 @@
 from injector import inject
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from src.core.account.accessors.auth_token_accessor import IAuthTokenAccessor
 from src.core.account.models import AuthTokenDomain
@@ -9,7 +9,10 @@ from src.pantrypal_api.account.models import AuthToken
 
 class AuthTokenAccessor(IAuthTokenAccessor):
     @inject
-    def __init__(self, db_provider: IDatabaseProvider):
+    def __init__(
+        self,
+        db_provider: IDatabaseProvider,
+    ):
         self.db_provider = db_provider
 
     async def upsert(self, auth_token: AuthTokenDomain) -> AuthTokenDomain:
@@ -40,16 +43,12 @@ class AuthTokenAccessor(IAuthTokenAccessor):
 
     async def delete_by_token(self, token: str) -> None:
         async with self.db_provider.get_db() as db:
-            await db.execute(
-                AuthToken.__table__.delete().where(AuthToken.token == token)
-            )
+            await db.execute(delete(AuthToken).where(AuthToken.token == token))
             await db.commit()
 
     async def delete_by_user_id(self, user_id: int) -> None:
         async with self.db_provider.get_db() as db:
-            await db.execute(
-                AuthToken.__table__.delete().where(AuthToken.user_id == user_id)
-            )
+            await db.execute(delete(AuthToken).where(AuthToken.user_id == user_id))
             await db.commit()
 
     def __to_model(self, domain: AuthTokenDomain) -> AuthToken:
