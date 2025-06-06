@@ -2,7 +2,6 @@ from typing import Optional
 
 from injector import inject
 
-from src.core.common.constants import JSON_FIELD_OPTION_TYPES
 from src.core.configuration.accessors.configuration_accessor import (
     IConfigurationAccessor,
 )
@@ -15,8 +14,8 @@ class ConfigurationService:
     def __init__(self, configuration_accessor: IConfigurationAccessor):
         self.configuration_accessor = configuration_accessor
 
-    def get_notification_email_sender_name(self) -> str:
-        configuration_domain = self.configuration_accessor.get_by_key(
+    async def get_notification_email_sender_name(self) -> str:
+        configuration_domain = await self.configuration_accessor.get_by_key(
             ConfigurationKey.NOTIFICATION_EMAIL_SENDER_NAME
         )
 
@@ -27,12 +26,12 @@ class ConfigurationService:
 
         return value
 
-    def get_notification_email_sender(self) -> int:
-        configuration_domain = self.configuration_accessor.get_by_key(
+    async def get_notification_email_sender(self) -> str:
+        configuration_domain = await self.configuration_accessor.get_by_key(
             ConfigurationKey.NOTIFICATION_EMAIL_SENDER
         )
 
-        value = int(
+        value = (
             self._get_configuration_value(configuration_domain)
             or ConfigurationDefault.NOTIFICATION_EMAIL_SENDER.value
         )
@@ -42,8 +41,7 @@ class ConfigurationService:
     @staticmethod
     def _get_configuration_value(
         configuration_domain: Optional[ConfigurationDomain],
-    ) -> JSON_FIELD_OPTION_TYPES:
+    ) -> Optional[str]:
         if not configuration_domain:
-            return {}
-
+            return None
         return configuration_domain.value

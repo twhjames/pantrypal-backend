@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, List
 
 from groq import BadRequestError, Groq
@@ -27,6 +28,10 @@ class GroqChatbotProvider(IChatbotProvider):
         return await self.__call_groq(formatted_history)
 
     async def __call_groq(self, formatted_messages: List[Dict[str, str]]) -> str:
+        """Executes the synchronous Groq API call in a separate thread to avoid blocking the event loop."""
+        return await asyncio.to_thread(self.__sync_call_groq, formatted_messages)
+
+    def __sync_call_groq(self, formatted_messages: List[Dict[str, str]]) -> str:
         """Executes the chat completion request to Groq."""
         api_key = self.__get_api_key()
         model = self.__get_model()

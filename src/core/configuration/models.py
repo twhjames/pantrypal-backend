@@ -1,10 +1,9 @@
 from typing import Optional
 
-from src.core.base.models import PantryPalBaseModelDomain
-from src.core.common.constants import JSON_FIELD_OPTION_TYPES
+from src.core.base.models import PantryPalMutableModelDomain
 
 
-class ConfigurationDomain(PantryPalBaseModelDomain):
+class ConfigurationDomain(PantryPalMutableModelDomain):
     key: str
-    value: JSON_FIELD_OPTION_TYPES
+    value: str
     description: Optional[str]

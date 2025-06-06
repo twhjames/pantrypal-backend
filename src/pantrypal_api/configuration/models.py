@@ -12,4 +12,11 @@ class Configuration(PantryPalBaseModel):
     description = Column(Text, nullable=True)
 
     def to_domain(self) -> ConfigurationDomain:
-        return ConfigurationDomain(key=self.key, value=self.value)
+        return ConfigurationDomain(
+            id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            key=self.key,
+            value=self.value,
+            description=self.description,
+        )
