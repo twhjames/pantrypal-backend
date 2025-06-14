@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 # Load metadata
-with open("../../Data/recipes_metadata.pkl", "rb") as f:
+with open("recipes_metadata.pkl", "rb") as f:
     metadata = pickle.load(f)
 
 # Load FAISS index
-faiss_index = faiss.read_index("../../Data/recipes.index")
+faiss_index = faiss.read_index("recipes.index")
 
 # Using LLM to extract possible constraints to help reduce the metadata df
 def extract_constraints_from_prompt(user_input: str) -> dict:
