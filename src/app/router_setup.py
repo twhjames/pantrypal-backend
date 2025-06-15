@@ -4,6 +4,7 @@ from src.pantrypal_api.account.routers.user_account_routers import (
     router as account_routers,
 )
 from src.pantrypal_api.chatbot.routers.chatbot_routers import router as chatbot_routers
+from src.pantrypal_api.pantry.routers.pantry_routers import router as pantry_routers
 
 # Add other routers here as app grows
 
@@ -11,3 +12,4 @@ from src.pantrypal_api.chatbot.routers.chatbot_routers import router as chatbot_
 def setup_routers(app: FastAPI):
     app.include_router(chatbot_routers)
     app.include_router(account_routers)
+    app.include_router(pantry_routers)
