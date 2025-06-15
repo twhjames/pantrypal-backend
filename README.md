@@ -138,7 +138,7 @@ This overview helps you navigate the folders and understand where to implement o
 | `configuration` | Stores runtime config values editable via the admin panel                  |
 | `common`        | Shared constants, enums, datetime helpers, and secret providers            |
 | `logging`       | Provides centralized application logging using the Python `logging` module |
-| `pantry`        | Manages pantry items, expiry prediction, and grocery-related logic         |
+| `pantry`        | Manages pantry item CRUD operations and user grocery inventory             |
 | `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)         |
 
 ---
@@ -389,6 +389,10 @@ src/pantrypal_api/admin/<feature>/admin.py
 | DELETE | /account/delete    | Delete the user account            |
 | POST   | /chatbot/recommend | Get one-shot recipe recommendation |
 | POST   | /chatbot/chat      | Start multi-turn conversation      |
+| GET    | /pantry/list       | Get all pantry items for a user    |
+| POST   | /pantry/add        | Add new pantry items               |
+| PUT    | /pantry/update     | Update existing pantry items       |
+| POST   | /pantry/delete     | Delete pantry items by ID          |
 
 Visit `/docs` for full Swagger documentation.
 
@@ -402,23 +406,25 @@ PantryPal's test suite is built with `pytest`, reflecting the project’s Hexago
 
 Tests are organized by feature and layer, mirroring the structure of the source code in `src/`. This keeps domain logic, adapters, and HTTP-facing interfaces cleanly separated.
 
-| Module          | Layer         | Purpose                                               |
-| --------------- | ------------- | ----------------------------------------------------- |
-| `chatbot`       | `services`    | Unit tests for chatbot business logic                 |
-|                 | `accessors`   | Tests for chat history access layer (abstract or DB)  |
-|                 | `adapters`    | Integration tests for LLM adapters (e.g. Groq)        |
-|                 | `controllers` | API tests for `/chatbot` endpoints                    |
-| `account`       | `services`    | Auth logic (registration, login, token management)    |
-|                 | `accessors`   | Database interactions for user accounts               |
-|                 | `adapters`    | Password hashing, token encoding                      |
-|                 | `controllers` | API tests for `/account` routes                       |
-| `configuration` | `services`    | Runtime config update and retrieval logic             |
-|                 | `accessors`   | DB access for config values                           |
-| `common`        | `adapters`    | Secret key provider implementation                    |
-|                 | `utils`       | Tests for shared utilities (e.g., time, constants)    |
-| `storage`       | `adapters`    | Storage layer (e.g., relational DB access)            |
-| `admin`         | —             | Tests for SQLAdmin views and admin dashboard behavior |
-| `conftest.py`   | —             | Shared fixtures for app, DB, and client setup         |
+| Module          | Layer         | Purpose                                                 |
+| --------------- | ------------- | ------------------------------------------------------- |
+| `account`       | `services`    | Auth logic (registration, login, token management)      |
+|                 | `accessors`   | Database interactions for user accounts                 |
+|                 | `adapters`    | Password hashing, token encoding                        |
+|                 | `controllers` | API tests for `/account` routes                         |
+| `chatbot`       | `services`    | Unit tests for chatbot business logic                   |
+|                 | `accessors`   | Tests for chat history access layer (abstract or DB)    |
+|                 | `adapters`    | Integration tests for LLM adapters (e.g. Groq)          |
+|                 | `controllers` | API tests for `/chatbot` endpoints                      |
+| `common`        | `adapters`    | Secret key provider implementation                      |
+|                 | `utils`       | Tests for shared utilities (e.g., time, constants)      |
+| `configuration` | `services`    | Runtime config update and retrieval logic               |
+|                 | `accessors`   | DB access for config values                             |
+| `pantry`        | `services`    | Unit tests for pantry logic (add, update, delete items) |
+|                 | `accessors`   | Tests for concrete DB access using SQLAlchemy           |
+|                 | `controllers` | API tests for `/pantry/items` endpoints                 |
+| `storage`       | `adapters`    | Storage layer (e.g., relational DB access)              |
+| `conftest.py`   | —             | Shared fixtures for app, DB, and client setup           |
 
 ### ✅ Test Coverage
 

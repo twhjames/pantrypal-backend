@@ -5,7 +5,7 @@ import pytest
 
 from src.core.chatbot.models import ChatHistoryDomain
 from src.core.common.constants import SecretKey
-from src.pantrypal_api.chatbot.accessors.chatbot_history_accessory import (
+from src.pantrypal_api.chatbot.accessors.chatbot_history_accessor import (
     ChatbotHistoryAccessor,
 )
 
