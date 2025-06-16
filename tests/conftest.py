@@ -118,6 +118,20 @@ def mock_chat_history_accessor():
     return make_async_accessor(["get_recent_messages", "save_message"])
 
 
+@pytest.fixture
+def mock_pantry_item_accessor():
+    return make_async_accessor(
+        [
+            "get_items_by_user",
+            "add_items",
+            "get_item_by_id",
+            "update_item",
+            "delete_items",
+            "get_items_by_ids",
+        ]
+    )
+
+
 # Sync-mocked accessors (used in sync service testing)
 @pytest.fixture
 def mock_configuration_accessor():
