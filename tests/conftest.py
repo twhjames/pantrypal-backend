@@ -10,6 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from src.app.main import app
 from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
 from src.core.common.ports.secretkey_provider import ISecretProvider
+from src.core.expiry.ports.expiry_prediction_provider import IExpiryPredictionProvider
+from src.core.expiry.ports.supermarket_expiry_provider import ISupermarketExpiryProvider
 from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.base.models import PantryPalBaseModel
@@ -74,6 +76,20 @@ def mock_chatbot_provider():
 @pytest.fixture
 def mock_secret_key_provider(mock_logging_provider):
     provider = MagicMock(spec=ISecretProvider)
+    return provider
+
+
+# Mock IExpiryPredictionProvider for static category-based expiry prediction
+@pytest.fixture
+def mock_expiry_prediction_provider():
+    provider = AsyncMock(spec=IExpiryPredictionProvider)
+    return provider
+
+
+# Mock ISupermarketExpiryProvider for external supermarket-based expiry prediction
+@pytest.fixture
+def mock_supermarket_expiry_provider():
+    provider = AsyncMock(spec=ISupermarketExpiryProvider)
     return provider
 
 

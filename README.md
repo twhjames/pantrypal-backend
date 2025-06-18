@@ -27,9 +27,11 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 
 ## 🚀 Features
 
--   📦 Inventory Management (Home Inventory Management System - HIMS)
+-   🧺 Pantry Management System
+    -   Track grocery items, categories, quantities, and purchase dates
+    -   Predict expiry dates with static heuristics or dynamic supermarket-specific logic
 -   🍽️ Recipe Recommendation Engine and Conversational Chatbot
-    -   Powered by a local **LLaMA** model using a recipe and shelf-life dataset
+    -   Powered by **LLaMA** via the **Groq API**, grounded on recipe and pantry expiry data
 -   🔐 Account Management System
     -   User registration, login, logout, update, and delete
     -   Token-based authentication with JWT
@@ -44,7 +46,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 | Framework          | FastAPI (Python 3.12+)                             |
 | Database           | SQLite (development)                               |
 | ORM                | SQLAlchemy                                         |
-| Recommender Engine | LLaMA (local, llama.cpp or HuggingFace)            |
+| Recommender Engine | LLaMA via Groq API (hosted inference)              |
 | Authentication     | JWT (via `python-jose`) + bcrypt                   |
 | API Documentation  | Swagger (auto-generated)                           |
 | Admin Panel        | SQLAdmin + Tabler UI                               |
@@ -56,7 +58,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 
 ## 🧱 Software Architecture
 
-The PantryPal backend follows the **Hexagonal Architecture** (also known as **Ports and Adapters**) pattern to ensure modularity, testability, and clear separation of concerns. It is organized around feature-first modules (e.g., `hims`, `chatbot`) and cleanly separates the business logic from infrastructure code.
+The PantryPal backend follows the **Hexagonal Architecture** (also known as **Ports and Adapters**) pattern to ensure modularity, testability, and clear separation of concerns. It is organized around feature-first modules (e.g. `chatbot`, `pantry`) and cleanly separates the business logic from infrastructure code.
 
 The key architectural layers include:
 
@@ -77,7 +79,7 @@ This modular design allows for:
 
 ## 📁 Project Structure Overview
 
-The file structure reflects the Hexagonal Architecture principles outlined above, organizing code around feature modules (like `chatbot`, `hims`) and layering them across core domain logic, application services, and framework-specific interfaces.
+The file structure reflects the Hexagonal Architecture principles outlined above, organizing code around feature modules (like `chatbot`, `pantry`) and layering them across core domain logic, application services, and framework-specific interfaces.
 
 This overview helps you navigate the folders and understand where to implement or extend new features.
 
@@ -137,6 +139,7 @@ This overview helps you navigate the folders and understand where to implement o
 | `chatbot`       | Handles LLM-based chat, recipe suggestions, and multi-turn conversations   |
 | `configuration` | Stores runtime config values editable via the admin panel                  |
 | `common`        | Shared constants, enums, datetime helpers, and secret providers            |
+| `expiry`        | Predicts expiry dates based on item category or supermarket-specific logic |
 | `logging`       | Provides centralized application logging using the Python `logging` module |
 | `pantry`        | Manages pantry item CRUD operations and user grocery inventory             |
 | `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)         |
@@ -420,6 +423,7 @@ Tests are organized by feature and layer, mirroring the structure of the source 
 |                 | `utils`       | Tests for shared utilities (e.g., time, constants)      |
 | `configuration` | `services`    | Runtime config update and retrieval logic               |
 |                 | `accessors`   | DB access for config values                             |
+| `expiry`        | `services`    | Predict expiry dates by category or supermarket logic   |
 | `pantry`        | `services`    | Unit tests for pantry logic (add, update, delete items) |
 |                 | `accessors`   | Tests for concrete DB access using SQLAlchemy           |
 |                 | `controllers` | API tests for `/pantry/items` endpoints                 |
