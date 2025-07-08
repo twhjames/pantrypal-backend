@@ -44,6 +44,7 @@ class UserOut(BaseModel):
 
 
 class AuthTokenOut(BaseModel):
+    user_id: int
     token: str
     token_type: str = "Bearer"
     expires_at: datetime

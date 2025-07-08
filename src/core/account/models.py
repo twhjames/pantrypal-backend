@@ -37,6 +37,7 @@ class AuthTokenDomain(PantryPalBaseModelDomain):
 
     def to_schema(self) -> AuthTokenOut:
         return AuthTokenOut(
+            user_id=self.user_id,
             token=self.token,
             expires_at=self.expires_at,
         )
