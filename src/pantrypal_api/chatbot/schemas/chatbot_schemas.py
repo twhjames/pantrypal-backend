@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -57,12 +57,6 @@ class Message(BaseModel):
             content=self.content,
             timestamp=self.timestamp or DateTimeUtils.get_utc_now(),
         )
-
-
-class Messages(BaseModel):
-    messages: List[Message] = Field(
-        ..., description="List of messages to simulate the conversation"
-    )
 
 
 class ChatReply(BaseModel):
