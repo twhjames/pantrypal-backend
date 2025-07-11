@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,3 +11,4 @@ class ChatMessageSpec(BaseModel):
     role: ChatbotMessageRole
     content: str
     timestamp: datetime
+    session_id: Optional[int] = None

@@ -1,13 +1,18 @@
+import json
 from datetime import datetime
+from typing import List, Optional
 
 from injector import inject
 
 from src.core.chatbot.accessors.chatbot_history_accessor import IChatbotHistoryAccessor
 from src.core.chatbot.constants import ChatbotMessageRole
+from src.core.chatbot.models import ChatSessionDomain
 from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
+from src.core.chatbot.services.chat_session_service import ChatSessionService
 from src.core.chatbot.specs import ChatMessageSpec
 from src.core.common.utils import DateTimeUtils
 from src.core.logging.ports.logging_provider import ILoggingProvider
+from src.core.pantry.services.pantry_service import PantryService
 
 
 class ChatbotService:
@@ -22,23 +27,36 @@ class ChatbotService:
     @inject
     def __init__(
         self,
+        pantry_service: PantryService,
+        chat_session_service: ChatSessionService,
         chatbot_provider: IChatbotProvider,
-        chat_history_accessor: IChatbotHistoryAccessor,
+        chatbot_history_accessor: IChatbotHistoryAccessor,
         logging_provider: ILoggingProvider,
     ):
         """
         Initializes the chatbot service with the given provider and chat history accessor.
-
-        :param chatbot_provider: Interface to the LLM provider
-        :param chat_history_accessor: Interface to persist and retrieve message history
         """
+        self.pantry_service = pantry_service
+        self.chat_session_service = chat_session_service
         self.chatbot_provider = chatbot_provider
-        self.chat_history_accessor = chat_history_accessor
+        self.chatbot_history_accessor = chatbot_history_accessor
         self.logging_provider = logging_provider
+        self._json_instruction = (
+            "You are an assistant that extracts structured recipe information from user-provided content.\n\n"
+            "Always respond only in valid JSON format with the following fields:\n"
+            '- "title": (string) the recipe title\n'
+            '- "summary": (string) a short description of the recipe\n'
+            '- "prep_time": (string) total preparation time, e.g., "15 mins"\n'
+            '- "ingredients": (list of strings) all required ingredients\n'
+            '- "instructions": (ordered list of strings) step-by-step instructions\n'
+            '- "available_ingredients": (list of strings) ingredients that are marked available\n'
+            '- "total_ingredients": (integer) total number of unique ingredients\n\n'
+            "Do not include any additional explanation or markdown formatting. Return strictly the JSON object."
+        )
 
     async def get_first_recommendation(self, message: ChatMessageSpec) -> str:
         """
-        Sends a one-shot message to the LLM without using chat history.
+        Return the first recipe suggestion for a user.
 
         :param message: The user's input message
         :return: The assistant's response string
@@ -47,10 +65,46 @@ class ChatbotService:
             f"Received one-shot message from user_id={message.user_id}"
         )
         try:
-            reply = await self.chatbot_provider.handle_single_turn(message)
+            await self.chatbot_history_accessor.save_message(message)
+            self.logging_provider.debug("User message saved to chat history")
+
+            items = await self.pantry_service.get_items_sorted_by_expiry(
+                message.user_id
+            )
+            if items:
+                ingredient_list = ", ".join(
+                    f"{i.item_name} {i.quantity} {i.unit} exp {i.expiry_date.date() if i.expiry_date else 'N/A'}"
+                    for i in items
+                )
+                enriched = message.model_copy(
+                    update={
+                        "content": f"Prioritize ingredients nearing expiry: {ingredient_list}. "
+                        + message.content
+                    }
+                )
+            else:
+                enriched = message
+
+            messages = self.__prepend_format_instruction([enriched])
+            reply = await self.chatbot_provider.handle_multi_turn(messages)
             self.logging_provider.debug(
                 "LLM reply generated for one-shot recommendation"
             )
+            session_id = await self.__update_chat_session(
+                reply, message.user_id, message.session_id
+            )
+
+            reply_timestamp = DateTimeUtils.get_utc_now()
+            assistant_message = self.__create_chat_message_spec(
+                user_id=message.user_id,
+                role=ChatbotMessageRole.ASSISTANT,
+                content=reply,
+                timestamp=reply_timestamp,
+                session_id=session_id,
+            )
+            await self.chatbot_history_accessor.save_message(assistant_message)
+            self.logging_provider.debug("Assistant message saved to chat history")
+
             return reply
         except Exception as e:
             self.logging_provider.error(f"Error in get_first_recommendation: {str(e)}")
@@ -68,18 +122,21 @@ class ChatbotService:
             f"Processing contextual message for user_id={message.user_id}"
         )
         try:
-            await self.chat_history_accessor.save_message(message)
+            await self.chatbot_history_accessor.save_message(message)
             self.logging_provider.debug("User message saved to chat history")
 
-            recent_messages = await self.chat_history_accessor.get_recent_messages(
-                message.user_id
+            recent_messages = await self.chatbot_history_accessor.get_recent_messages(
+                message.user_id, session_id=message.session_id
             )
             self.logging_provider.debug(
                 f"Fetched {len(recent_messages)} recent messages"
             )
 
             reply = await self.chatbot_provider.handle_multi_turn(recent_messages)
+
             self.logging_provider.debug("LLM reply generated for contextual chat")
+
+            await self.__update_chat_session(reply, message.user_id, message.session_id)
 
             reply_timestamp = DateTimeUtils.get_utc_now()
             assistant_message = self.__create_chat_message_spec(
@@ -87,8 +144,9 @@ class ChatbotService:
                 role=ChatbotMessageRole.ASSISTANT,
                 content=reply,
                 timestamp=reply_timestamp,
+                session_id=message.session_id,
             )
-            await self.chat_history_accessor.save_message(assistant_message)
+            await self.chatbot_history_accessor.save_message(assistant_message)
             self.logging_provider.debug("Assistant message saved to chat history")
 
             return reply
@@ -97,7 +155,12 @@ class ChatbotService:
             raise
 
     def __create_chat_message_spec(
-        self, user_id: int, role: ChatbotMessageRole, content: str, timestamp: datetime
+        self,
+        user_id: int,
+        role: ChatbotMessageRole,
+        content: str,
+        timestamp: datetime,
+        session_id: Optional[int] = None,
     ) -> ChatMessageSpec:
         """
         Helper to constructs a ChatMessageSpec from components.
@@ -106,8 +169,71 @@ class ChatbotService:
         :param role: Sender's role
         :param content: Message text
         :param timestamp: Timestamp of message creation
+        :param session_id: Chat session id
         :return: ChatMessageSpec
         """
         return ChatMessageSpec(
-            user_id=user_id, role=role, content=content, timestamp=timestamp
+            user_id=user_id,
+            role=role,
+            content=content,
+            timestamp=timestamp,
+            session_id=session_id,
+        )
+
+    def __prepend_format_instruction(
+        self, messages: List[ChatMessageSpec]
+    ) -> List[ChatMessageSpec]:
+        system_msg = ChatMessageSpec(
+            user_id=messages[0].user_id,
+            role=ChatbotMessageRole.SYSTEM,
+            content=self._json_instruction,
+            timestamp=DateTimeUtils.get_utc_now(),
+            session_id=messages[0].session_id,
+        )
+        return [system_msg, *messages]
+
+    async def __update_chat_session(
+        self, reply: str, user_id: int, session_id: Optional[int]
+    ) -> None:
+        session_data = self.__parse_recipe_reply(reply, user_id)
+        if session_data is None:
+            return session_id
+        if session_id is None:
+            created = await self.chat_session_service.create_session(session_data)
+            return created.id
+        await self.chat_session_service.update_session_recipe(session_id, session_data)
+        return session_id
+
+    def __parse_recipe_reply(
+        self, reply: str, user_id: int
+    ) -> Optional[ChatSessionDomain]:
+        """Return a ChatSessionDomain if reply contains recipe JSON."""
+        try:
+            data = json.loads(reply)
+        except Exception:
+            return None
+
+        if not isinstance(data, dict) or "title" not in data:
+            return None
+
+        prep = data.get("prep_time")
+        if isinstance(prep, str):
+            digits = "".join(ch for ch in prep if ch.isdigit())
+            prep = int(digits) if digits else None
+
+        available = data.get("available_ingredients", 0)
+        if isinstance(available, list):
+            available = len(available)
+
+        return ChatSessionDomain.create(
+            user_id=user_id,
+            title=data.get("title", ""),
+            summary=data.get("summary"),
+            prep_time=prep,
+            instructions=data.get("instructions", []),
+            ingredients=data.get("ingredients", []),
+            available_ingredients=available,
+            total_ingredients=data.get(
+                "total_ingredients", len(data.get("ingredients", []))
+            ),
         )

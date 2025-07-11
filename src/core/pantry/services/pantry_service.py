@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 
 from injector import inject
@@ -94,3 +95,8 @@ class PantryService:
             item_ids=spec.item_ids,
             user_id=user_id,
         )
+
+    async def get_items_sorted_by_expiry(self, user_id: int) -> List[PantryItemDomain]:
+        items = await self.get_items(user_id)
+        max_dt = datetime.max.replace(tzinfo=timezone.utc)
+        return sorted(items, key=lambda i: i.expiry_date or max_dt)
