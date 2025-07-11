@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -140,3 +140,55 @@ async def test_delete_items_success(mock_pantry_item_accessor, mock_logging_prov
     mock_pantry_item_accessor.delete_items.assert_awaited_once_with(
         item_ids=[1], user_id=1
     )
+
+
+@pytest.mark.asyncio
+async def test_get_items_sorted_by_expiry(
+    mock_pantry_item_accessor, mock_logging_provider
+):
+    now = datetime.now(timezone.utc)
+    items = [
+        PantryItemDomain(
+            id=1,
+            user_id=1,
+            item_name="A",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=2),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=2,
+            user_id=1,
+            item_name="B",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=3,
+            user_id=1,
+            item_name="C",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=None,
+            created_at=now,
+            updated_at=now,
+        ),
+    ]
+
+    mock_pantry_item_accessor.get_items_by_user.return_value = items
+
+    service = PantryService(mock_pantry_item_accessor, mock_logging_provider)
+    result = await service.get_items_sorted_by_expiry(user_id=1)
+
+    assert [i.id for i in result] == [2, 1, 3]

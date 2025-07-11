@@ -34,19 +34,19 @@ async def test_save_and_retrieve_single_message(
     )
 
     # Create a test message to save
-    domain_msg = ChatHistoryDomain(
-        id=1,
+    domain_msg = ChatHistoryDomain.create(
+        user_id=1,
         role="user",
         content="What's in my fridge?",
-        user_id=1,
         timestamp=datetime.now(timezone.utc),
+        session_id=1,
     )
 
     # Save the message
     await accessor.save_message(domain_msg)
 
     # Retrieve recent messages for the user
-    retrieved = await accessor.get_recent_messages(domain_msg.user_id)
+    retrieved = await accessor.get_recent_messages(domain_msg.user_id, session_id=1)
 
     # Check that the saved message is among the results
     assert any(m.content == domain_msg.content for m in retrieved)
@@ -67,26 +67,26 @@ async def test_retrieve_multiple_messages_sorted_by_timestamp(
 
     # Create multiple messages with increasing timestamps
     messages = [
-        ChatHistoryDomain(
-            id=1,
+        ChatHistoryDomain.create(
+            user_id=1,
             role="user",
             content="A",
-            user_id=1,
             timestamp=datetime(2023, 1, 1, tzinfo=timezone.utc),
+            session_id=1,
         ),
-        ChatHistoryDomain(
-            id=2,
+        ChatHistoryDomain.create(
+            user_id=1,
             role="assistant",
             content="B",
-            user_id=1,
             timestamp=datetime(2023, 1, 2, tzinfo=timezone.utc),
+            session_id=1,
         ),
-        ChatHistoryDomain(
-            id=3,
+        ChatHistoryDomain.create(
+            user_id=1,
             role="user",
             content="C",
-            user_id=1,
             timestamp=datetime(2023, 1, 3, tzinfo=timezone.utc),
+            session_id=1,
         ),
     ]
 
@@ -95,6 +95,6 @@ async def test_retrieve_multiple_messages_sorted_by_timestamp(
         await accessor.save_message(msg)
 
     # Retrieve and assert the messages are returned in correct order
-    retrieved = await accessor.get_recent_messages(1)
+    retrieved = await accessor.get_recent_messages(1, session_id=1)
     assert len(retrieved) == 3
     assert [m.content for m in retrieved] == ["C", "B", "A"]

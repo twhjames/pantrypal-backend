@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from src.core.chatbot.models import ChatHistoryDomain
 from src.core.chatbot.specs import ChatMessageSpec
@@ -11,5 +11,11 @@ class IChatbotHistoryAccessor(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_recent_messages(self, user_id: int) -> List[ChatHistoryDomain]:
+    async def get_recent_messages(
+        self, user_id: int, session_id: Optional[int] = None
+    ) -> List[ChatHistoryDomain]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_messages_by_session(self, session_id: int) -> List[ChatHistoryDomain]:
         raise NotImplementedError

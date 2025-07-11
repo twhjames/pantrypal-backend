@@ -1,7 +1,14 @@
-from fastapi import APIRouter, Depends
+from typing import List
 
+from fastapi import APIRouter, Depends, Query
+
+from src.core.chatbot.services.chat_session_service import ChatSessionService
 from src.core.chatbot.services.chatbot_service import ChatbotService
+from src.pantrypal_api.chatbot.controllers.chat_session_controllers import (
+    ChatSessionController,
+)
 from src.pantrypal_api.chatbot.controllers.chatbot_controllers import ChatbotController
+from src.pantrypal_api.chatbot.schemas.chat_session_schemas import ChatSessionResponse
 from src.pantrypal_api.chatbot.schemas.chatbot_schemas import ChatReply, Message
 from src.pantrypal_api.modules import injector
 
@@ -12,6 +19,11 @@ router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 def get_chatbot_controller() -> ChatbotController:
     chatbot_service = injector.get(ChatbotService)
     return ChatbotController(chatbot_service)
+
+
+def get_chat_session_controller() -> ChatSessionController:
+    chat_session_service = injector.get(ChatSessionService)
+    return ChatSessionController(chat_session_service)
 
 
 @router.post(
@@ -36,3 +48,27 @@ async def chat_with_history(
     message: Message, controller: ChatbotController = Depends(get_chatbot_controller)
 ):
     return await controller.get_contextual_chat_reply(message)
+
+
+@router.get(
+    "/sessions",
+    response_model=List[ChatSessionResponse],
+    summary="List chat sessions for user",
+)
+async def list_sessions(
+    user_id: int = Query(..., description="User ID"),
+    controller: ChatSessionController = Depends(get_chat_session_controller),
+):
+    return await controller.list_sessions(user_id)
+
+
+@router.get(
+    "/sessions/{session_id}",
+    response_model=List[Message],
+    summary="Get chat history for session",
+)
+async def get_session_history(
+    session_id: int,
+    controller: ChatSessionController = Depends(get_chat_session_controller),
+):
+    return await controller.get_history(session_id)

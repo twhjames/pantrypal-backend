@@ -10,6 +10,7 @@ class TestChatbotEndpoints:
             "role": "user",
             "content": "I have salmon and broccoli",
             "timestamp": "2025-06-01T15:01:03.110Z",
+            "session_id": 1,
         }
 
         response = await async_client.post("/chatbot/recommend", json=payload)
@@ -23,6 +24,7 @@ class TestChatbotEndpoints:
             "role": "user",
             "content": "What can I cook today?",
             "timestamp": "2025-06-01T15:01:03.110Z",
+            "session_id": 1,
         }
 
         response = await async_client.post("/chatbot/chat", json=payload)
