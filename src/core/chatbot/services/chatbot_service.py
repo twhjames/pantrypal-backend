@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from typing import List, Optional
 
@@ -42,16 +43,18 @@ class ChatbotService:
         self.chatbot_history_accessor = chatbot_history_accessor
         self.logging_provider = logging_provider
         self._json_instruction = (
-            "You are an assistant that extracts structured recipe information from user-provided content.\n\n"
-            "Always respond only in valid JSON format with the following fields:\n"
+            "You are an assistant that recommends a recipe based on user-provided content.\n\n"
+            "Respond strictly in JSON format with the following fields:\n"
             '- "title": (string) the recipe title\n'
             '- "summary": (string) a short description of the recipe\n'
-            '- "prep_time": (string) total preparation time, e.g., "15 mins"\n'
+            '- "prep_time": (string) total preparation time (e.g., "15 mins")\n'
             '- "ingredients": (list of strings) all required ingredients\n'
             '- "instructions": (ordered list of strings) step-by-step instructions\n'
-            '- "available_ingredients": (list of strings) ingredients that are marked available\n'
-            '- "total_ingredients": (integer) total number of unique ingredients\n\n'
-            "Do not include any additional explanation or markdown formatting. Return strictly the JSON object."
+            '- "available_ingredients": (list of strings) ingredients marked as available by the user\n'
+            '- "total_ingredients": (integer) total number of unique ingredients\n'
+            '- "assistant_comment": (string) your conversational response based on the message context. '
+            "You may use markdown or formatting to enhance readability.\n\n"
+            "Return only a valid JSON object, with no additional text before or after."
         )
 
     async def get_first_recommendation(self, message: ChatMessageSpec) -> str:
@@ -218,8 +221,17 @@ class ChatbotService:
 
         prep = data.get("prep_time")
         if isinstance(prep, str):
-            digits = "".join(ch for ch in prep if ch.isdigit())
-            prep = int(digits) if digits else None
+            hours_match = re.search(r"(\d+)\s*(?:h|hr|hrs|hour|hours)", prep, re.I)
+            mins_match = re.search(r"(\d+)\s*(?:m|min|mins|minute|minutes)", prep, re.I)
+            total = 0
+            if hours_match:
+                total += int(hours_match.group(1)) * 60
+            if mins_match:
+                total += int(mins_match.group(1))
+            if not hours_match and not mins_match:
+                digits = "".join(ch for ch in prep if ch.isdigit())
+                total = int(digits) if digits else 0
+            prep = total or None
 
         available = data.get("available_ingredients", 0)
         if isinstance(available, list):
