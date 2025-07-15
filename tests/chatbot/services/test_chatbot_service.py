@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from src.core.chatbot.models import ChatHistoryDomain
+from src.core.chatbot.models import ChatHistoryDomain, ChatSessionDomain
 from src.core.chatbot.services.chatbot_service import ChatbotService
 from src.core.chatbot.specs import ChatMessageSpec
 
@@ -27,6 +27,10 @@ async def test_get_first_recommendation(
         logging_provider=mock_logging_provider,
     )
 
+    created_session = ChatSessionDomain.create(user_id=1, title="Soup")
+    created_session.id = 42
+    mock_chat_session_service.create_session.return_value = created_session
+
     msg = ChatMessageSpec(
         id=1,
         role="user",
@@ -35,9 +39,10 @@ async def test_get_first_recommendation(
         timestamp=datetime.now(timezone.utc),
         session_id=1,
     )
-    result = await service.get_first_recommendation(msg)
+    reply, session_id = await service.get_first_recommendation(msg)
 
-    assert result == '{"title": "Soup", "ingredients": [], "instructions": []}'
+    assert reply == '{"title": "Soup", "ingredients": [], "instructions": []}'
+    assert session_id == 1
     mock_chat_session_service.update_session_recipe.assert_awaited()
     assert mock_chatbot_history_accessor.save_message.await_count == 2
 
@@ -69,9 +74,49 @@ async def test_get_first_recommendation_creates_session(
         timestamp=datetime.now(timezone.utc),
         session_id=None,
     )
-    await service.get_first_recommendation(msg)
+    reply, session_id = await service.get_first_recommendation(msg)
 
     mock_chat_session_service.create_session.assert_awaited()
+    assert reply == '{"title": "Soup", "ingredients": [], "instructions": []}'
+    assert session_id == mock_chat_session_service.create_session.return_value.id
+
+
+@pytest.mark.asyncio
+async def test_first_recommendation_saves_user_message_with_session(
+    mock_chatbot_provider,
+    mock_chatbot_history_accessor,
+    mock_pantry_service,
+    mock_chat_session_service,
+    mock_logging_provider,
+):
+    mock_chatbot_provider.handle_multi_turn.return_value = (
+        '{"title": "Soup", "ingredients": [], "instructions": []}'
+    )
+    created_session = ChatSessionDomain.create(user_id=1, title="Soup")
+    created_session.id = 123
+    mock_chat_session_service.create_session.return_value = created_session
+
+    service = ChatbotService(
+        chatbot_provider=mock_chatbot_provider,
+        chatbot_history_accessor=mock_chatbot_history_accessor,
+        pantry_service=mock_pantry_service,
+        chat_session_service=mock_chat_session_service,
+        logging_provider=mock_logging_provider,
+    )
+
+    msg = ChatMessageSpec(
+        role="user",
+        content="I have tomatoes and pasta",
+        user_id=1,
+        timestamp=datetime.now(timezone.utc),
+    )
+    reply, session_id = await service.get_first_recommendation(msg)
+
+    saved_user_message = mock_chatbot_history_accessor.save_message.await_args_list[
+        0
+    ].args[0]
+    assert saved_user_message.session_id == 123
+    assert session_id == 123
 
 
 @pytest.mark.asyncio

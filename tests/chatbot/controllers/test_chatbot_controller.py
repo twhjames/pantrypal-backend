@@ -17,6 +17,7 @@ class TestChatbotEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert "reply" in data
+        assert "session_id" in data
 
     async def test_chat_endpoint(self, async_client: AsyncClient):
         payload = {

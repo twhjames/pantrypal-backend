@@ -14,8 +14,8 @@ class ChatbotController:
 
     async def get_recipe_recommendation(self, message: Message) -> ChatReply:
         spec = message.to_spec()
-        reply = await self.chatbot_service.get_first_recommendation(spec)
-        return ChatReply(reply=reply)
+        reply, session_id = await self.chatbot_service.get_first_recommendation(spec)
+        return ChatReply(reply=reply, session_id=session_id)
 
     async def get_contextual_chat_reply(self, message: Message) -> ChatReply:
         spec = message.to_spec()
