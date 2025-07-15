@@ -57,20 +57,19 @@ class ChatbotService:
             "Return only a valid JSON object, with no additional text before or after."
         )
 
-    async def get_first_recommendation(self, message: ChatMessageSpec) -> str:
+    async def get_first_recommendation(
+        self, message: ChatMessageSpec
+    ) -> tuple[str, Optional[int]]:
         """
         Return the first recipe suggestion for a user.
 
         :param message: The user's input message
-        :return: The assistant's response string
+        :return: Tuple of the assistant's reply and the resolved session id
         """
         self.logging_provider.info(
             f"Received one-shot message from user_id={message.user_id}"
         )
         try:
-            await self.chatbot_history_accessor.save_message(message)
-            self.logging_provider.debug("User message saved to chat history")
-
             items = await self.pantry_service.get_items_sorted_by_expiry(
                 message.user_id
             )
@@ -97,6 +96,10 @@ class ChatbotService:
                 reply, message.user_id, message.session_id
             )
 
+            user_message = message.model_copy(update={"session_id": session_id})
+            await self.chatbot_history_accessor.save_message(user_message)
+            self.logging_provider.debug("User message saved to chat history")
+
             reply_timestamp = DateTimeUtils.get_utc_now()
             assistant_message = self.__create_chat_message_spec(
                 user_id=message.user_id,
@@ -108,7 +111,7 @@ class ChatbotService:
             await self.chatbot_history_accessor.save_message(assistant_message)
             self.logging_provider.debug("Assistant message saved to chat history")
 
-            return reply
+            return reply, session_id
         except Exception as e:
             self.logging_provider.error(f"Error in get_first_recommendation: {str(e)}")
             raise
@@ -125,9 +128,6 @@ class ChatbotService:
             f"Processing contextual message for user_id={message.user_id}"
         )
         try:
-            await self.chatbot_history_accessor.save_message(message)
-            self.logging_provider.debug("User message saved to chat history")
-
             recent_messages = await self.chatbot_history_accessor.get_recent_messages(
                 message.user_id, session_id=message.session_id
             )
@@ -135,11 +135,22 @@ class ChatbotService:
                 f"Fetched {len(recent_messages)} recent messages"
             )
 
-            reply = await self.chatbot_provider.handle_multi_turn(recent_messages)
+            history_specs = [
+                ChatMessageSpec.model_validate(m.model_dump()) for m in recent_messages
+            ]
+            history_specs.append(message)
+
+            reply = await self.chatbot_provider.handle_multi_turn(history_specs)
 
             self.logging_provider.debug("LLM reply generated for contextual chat")
 
-            await self.__update_chat_session(reply, message.user_id, message.session_id)
+            session_id = await self.__update_chat_session(
+                reply, message.user_id, message.session_id
+            )
+
+            user_message = message.model_copy(update={"session_id": session_id})
+            await self.chatbot_history_accessor.save_message(user_message)
+            self.logging_provider.debug("User message saved to chat history")
 
             reply_timestamp = DateTimeUtils.get_utc_now()
             assistant_message = self.__create_chat_message_spec(
@@ -147,7 +158,7 @@ class ChatbotService:
                 role=ChatbotMessageRole.ASSISTANT,
                 content=reply,
                 timestamp=reply_timestamp,
-                session_id=message.session_id,
+                session_id=session_id,
             )
             await self.chatbot_history_accessor.save_message(assistant_message)
             self.logging_provider.debug("Assistant message saved to chat history")
@@ -197,7 +208,7 @@ class ChatbotService:
 
     async def __update_chat_session(
         self, reply: str, user_id: int, session_id: Optional[int]
-    ) -> None:
+    ) -> Optional[int]:
         session_data = self.__parse_recipe_reply(reply, user_id)
         if session_data is None:
             return session_id

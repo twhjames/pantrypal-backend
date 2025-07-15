@@ -9,6 +9,7 @@ class ChatHistoryAdmin(PantryPalModelAdmin, model=ChatHistory):
     column_list = [
         ChatHistory.id,
         ChatHistory.user_id,
+        ChatHistory.session_id,
         ChatHistory.role,
         ChatHistory.content,
         ChatHistory.timestamp,
