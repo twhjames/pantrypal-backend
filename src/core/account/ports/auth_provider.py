@@ -16,3 +16,8 @@ class IAuthProvider(ABC):
     def get_hashed_password(self, raw_password: str) -> str:
         """Hash the provided raw password securely."""
         raise NotImplementedError
+
+    @abstractmethod
+    def decode_token(self, token: str) -> int:
+        """Return the user ID encoded in the JWT token."""
+        raise NotImplementedError

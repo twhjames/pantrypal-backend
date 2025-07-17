@@ -39,6 +39,24 @@ class AuthProvider(IAuthProvider):
 
         return jwt.encode(payload, secret_key, algorithm=algorithm)
 
+    def decode_token(self, token: str) -> int:
+        """Decode a JWT token and return the user id."""
+        secret_key = self.__get_secret_key()
+        algorithm = self.__get_algorithm()
+        try:
+            payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+            user_id_str = payload.get("sub")
+            if user_id_str is None:
+                raise ValueError("Token missing subject")
+            return int(user_id_str)
+        except Exception as e:  # JWTError or ValueError
+            self.logging_provider.warning(
+                "Failed to decode auth token",
+                extra_data={"error": str(e)},
+                tag="AuthProvider",
+            )
+            raise ValueError("Invalid token")
+
     def __get_secret_key(self) -> str:
         key = self.secret_provider.get_secret(SecretKey.AUTH_SECRET_KEY)
         if not key:

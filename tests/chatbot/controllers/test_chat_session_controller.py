@@ -26,7 +26,24 @@ def mock_valid_secret_key_provider():
 @pytest.mark.asyncio
 class TestChatSessionEndpoints:
     async def test_list_sessions(self, async_client: AsyncClient):
-        response = await async_client.get("/chatbot/sessions?user_id=1")
+        await async_client.post(
+            "/account/register",
+            json={
+                "username": "chat",
+                "email": "chat@example.com",
+                "password": "pass123",
+            },
+        )
+        login_resp = await async_client.post(
+            "/account/login",
+            json={"email": "chat@example.com", "password": "pass123"},
+        )
+        token = login_resp.json()["token"]
+
+        response = await async_client.get(
+            "/chatbot/sessions",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
