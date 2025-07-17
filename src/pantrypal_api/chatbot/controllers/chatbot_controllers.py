@@ -1,7 +1,11 @@
 from injector import inject
 
 from src.core.chatbot.services.chatbot_service import ChatbotService
-from src.pantrypal_api.chatbot.schemas.chatbot_schemas import ChatReply, Message
+from src.pantrypal_api.chatbot.schemas.chatbot_schemas import (
+    ChatReply,
+    ContextualChatMessage,
+    RecommendMessage,
+)
 
 
 class ChatbotController:
@@ -12,12 +16,14 @@ class ChatbotController:
     ):
         self.chatbot_service = chatbot_service
 
-    async def get_recipe_recommendation(self, message: Message) -> ChatReply:
+    async def get_recipe_recommendation(self, message: RecommendMessage) -> ChatReply:
         spec = message.to_spec()
         reply, session_id = await self.chatbot_service.get_first_recommendation(spec)
         return ChatReply(reply=reply, session_id=session_id)
 
-    async def get_contextual_chat_reply(self, message: Message) -> ChatReply:
+    async def get_contextual_chat_reply(
+        self, message: ContextualChatMessage
+    ) -> ChatReply:
         spec = message.to_spec()
         reply = await self.chatbot_service.chat_with_context(spec)
         return ChatReply(reply=reply)

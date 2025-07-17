@@ -9,7 +9,12 @@ from src.pantrypal_api.chatbot.controllers.chat_session_controllers import (
 )
 from src.pantrypal_api.chatbot.controllers.chatbot_controllers import ChatbotController
 from src.pantrypal_api.chatbot.schemas.chat_session_schemas import ChatSessionResponse
-from src.pantrypal_api.chatbot.schemas.chatbot_schemas import ChatReply, Message
+from src.pantrypal_api.chatbot.schemas.chatbot_schemas import (
+    ChatReply,
+    ContextualChatMessage,
+    Message,
+    RecommendMessage,
+)
 from src.pantrypal_api.modules import injector
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
@@ -33,7 +38,8 @@ def get_chat_session_controller() -> ChatSessionController:
     description="Send a single message to receive a quick recipe recommendation from PantryPal Assistant.",
 )
 async def recommend_recipe(
-    message: Message, controller: ChatbotController = Depends(get_chatbot_controller)
+    message: RecommendMessage,
+    controller: ChatbotController = Depends(get_chatbot_controller),
 ):
     return await controller.get_recipe_recommendation(message)
 
@@ -45,7 +51,8 @@ async def recommend_recipe(
     description="Send a series of chat messages to receive a contextual reply from PantryPal Assistant.",
 )
 async def chat_with_history(
-    message: Message, controller: ChatbotController = Depends(get_chatbot_controller)
+    message: ContextualChatMessage,
+    controller: ChatbotController = Depends(get_chatbot_controller),
 ):
     return await controller.get_contextual_chat_reply(message)
 
@@ -72,3 +79,15 @@ async def get_session_history(
     controller: ChatSessionController = Depends(get_chat_session_controller),
 ):
     return await controller.get_history(session_id)
+
+
+@router.delete(
+    "/sessions/{session_id}",
+    status_code=204,
+    summary="Delete chat session",
+)
+async def delete_session(
+    session_id: int,
+    controller: ChatSessionController = Depends(get_chat_session_controller),
+):
+    await controller.delete_session(session_id)

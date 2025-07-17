@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from injector import inject
+from sqlalchemy import update
 from sqlalchemy.future import select
 
 from src.core.chatbot.accessors.chatbot_history_accessor import IChatbotHistoryAccessor
@@ -55,6 +56,7 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
                 stmt = (
                     select(ChatHistory)
                     .where(ChatHistory.user_id == user_id)
+                    .where(ChatHistory.deleted_at.is_(None))
                     .order_by(ChatHistory.created_at.desc())
                     .limit(limit)
                 )
@@ -77,6 +79,7 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
                 result = await session.execute(
                     select(ChatHistory)
                     .where(ChatHistory.session_id == session_id)
+                    .where(ChatHistory.deleted_at.is_(None))
                     .order_by(ChatHistory.created_at.asc())
                 )
                 messages = result.scalars().all()
@@ -88,6 +91,16 @@ class ChatbotHistoryAccessor(IChatbotHistoryAccessor):
                 tag="ChatbotHistoryAccessor",
             )
             raise
+
+    async def soft_delete_history_by_session(self, session_id: int) -> None:
+        async with self.db_provider.get_db() as session:
+            await session.execute(
+                update(ChatHistory)
+                .where(ChatHistory.session_id == session_id)
+                .where(ChatHistory.deleted_at.is_(None))
+                .values(deleted_at=DateTimeUtils.get_utc_now())
+            )
+            await session.commit()
 
     def __get_max_chat_history(self) -> int:
         return int(self.secret_provider.get_secret(SecretKey.CHATBOT_MAX_CHAT_HISTORY))

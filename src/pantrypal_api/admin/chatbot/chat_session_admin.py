@@ -16,6 +16,7 @@ class ChatSessionAdmin(PantryPalModelAdmin, model=ChatSession):
         ChatSession.available_count,
         ChatSession.total_count,
         ChatSession.created_at,
+        ChatSession.deleted_at,
         ChatSession.updated_at,
     ]
 

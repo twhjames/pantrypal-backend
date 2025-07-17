@@ -41,3 +41,8 @@ class ChatSessionService:
         return await self.chat_session_accessor.update_session_recipe(
             session_id, session
         )
+
+    async def delete_session(self, session_id: int) -> None:
+        """Soft delete a chat session and its history."""
+        await self.chat_session_accessor.soft_delete_session(session_id)
+        await self.chatbot_history_accessor.soft_delete_history_by_session(session_id)

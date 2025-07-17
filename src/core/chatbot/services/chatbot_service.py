@@ -89,14 +89,16 @@ class ChatbotService:
 
             messages = self.__prepend_format_instruction([enriched])
             reply = await self.chatbot_provider.handle_multi_turn(messages)
-            self.logging_provider.debug(
-                "LLM reply generated for one-shot recommendation"
-            )
-            session_id = await self.__update_chat_session(
-                reply, message.user_id, message.session_id
+            self.logging_provider.debug("LLM reply generated for recipe recommendation")
+            session_data = self.__parse_recipe_reply(reply, message.user_id)
+            new_chat_session = await self.chat_session_service.create_session(
+                session_data
             )
 
-            user_message = message.model_copy(update={"session_id": session_id})
+            user_message = message.model_copy(
+                update={"session_id": new_chat_session.id}
+            )
+
             await self.chatbot_history_accessor.save_message(user_message)
             self.logging_provider.debug("User message saved to chat history")
 
@@ -106,12 +108,12 @@ class ChatbotService:
                 role=ChatbotMessageRole.ASSISTANT,
                 content=reply,
                 timestamp=reply_timestamp,
-                session_id=session_id,
+                session_id=new_chat_session.id,
             )
             await self.chatbot_history_accessor.save_message(assistant_message)
             self.logging_provider.debug("Assistant message saved to chat history")
 
-            return reply, session_id
+            return reply, new_chat_session.id
         except Exception as e:
             self.logging_provider.error(f"Error in get_first_recommendation: {str(e)}")
             raise
@@ -212,9 +214,6 @@ class ChatbotService:
         session_data = self.__parse_recipe_reply(reply, user_id)
         if session_data is None:
             return session_id
-        if session_id is None:
-            created = await self.chat_session_service.create_session(session_data)
-            return created.id
         await self.chat_session_service.update_session_recipe(session_id, session_data)
         return session_id
 

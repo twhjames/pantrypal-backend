@@ -21,20 +21,6 @@ class Message(BaseModel):
     content: str = Field(..., description="Message content")
     timestamp: Optional[datetime] = None
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "user_id": 1,
-                    "session_id": 1,
-                    "role": "user",
-                    "content": "I have some rice and eggs. What can I cook?",
-                    "timestamp": None,
-                }
-            ]
-        }
-    )
-
     @field_validator("role", mode="before")
     @classmethod
     def validate_and_normalize_role(cls, value):
@@ -62,6 +48,41 @@ class Message(BaseModel):
             content=self.content,
             timestamp=self.timestamp or DateTimeUtils.get_utc_now(),
         )
+
+
+class RecommendMessage(Message):
+    """Message schema for recipe recommendation, no session_id example."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "user_id": 1,
+                    "role": "user",
+                    "content": "What can I make with rice and eggs?",
+                    "timestamp": None,
+                }
+            ]
+        }
+    )
+
+
+class ContextualChatMessage(Message):
+    """Message schema for contextual chat, with session_id example."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "user_id": 1,
+                    "session_id": 10,
+                    "role": "user",
+                    "content": "Let's continue from earlier, any other ideas?",
+                    "timestamp": None,
+                }
+            ]
+        }
+    )
 
 
 class ChatReply(BaseModel):
