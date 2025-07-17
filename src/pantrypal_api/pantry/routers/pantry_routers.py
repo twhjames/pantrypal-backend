@@ -1,8 +1,9 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 
 from src.core.pantry.services.pantry_service import PantryService
+from src.pantrypal_api.account.dependencies import get_current_user
 from src.pantrypal_api.modules import injector
 from src.pantrypal_api.pantry.controllers.pantry_controllers import PantryController
 from src.pantrypal_api.pantry.schemas.pantry_schemas import (
@@ -22,34 +23,34 @@ def get_pantry_controller() -> PantryController:
 
 @router.get("/list", response_model=List[PantryItemResponse])
 async def list_pantry_items(
-    user_id: int = Query(..., description="User ID"),
     controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.get_items(user_id)
+    return await controller.get_items(current_user_id)
 
 
 @router.post("/add", response_model=List[PantryItemResponse])
 async def add_pantry_items(
     requests: List[AddPantryItemRequest],
-    user_id: int = Query(..., description="User ID"),
     controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.add_items(user_id, requests)
+    return await controller.add_items(current_user_id, requests)
 
 
 @router.patch("/update", response_model=PantryItemResponse)
 async def update_pantry_item(
     request: UpdatePantryItemRequest,
-    user_id: int = Query(..., description="User ID"),
     controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.update_item(user_id, request)
+    return await controller.update_item(current_user_id, request)
 
 
 @router.post("/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_pantry_items(
     request: DeletePantryItemsRequest,
-    user_id: int = Query(..., description="User ID"),
     controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    await controller.delete_items(user_id, request)
+    await controller.delete_items(current_user_id, request)

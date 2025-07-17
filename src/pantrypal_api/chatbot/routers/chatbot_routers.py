@@ -1,9 +1,10 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from src.core.chatbot.services.chat_session_service import ChatSessionService
 from src.core.chatbot.services.chatbot_service import ChatbotService
+from src.pantrypal_api.account.dependencies import get_current_user
 from src.pantrypal_api.chatbot.controllers.chat_session_controllers import (
     ChatSessionController,
 )
@@ -63,10 +64,10 @@ async def chat_with_history(
     summary="List chat sessions for user",
 )
 async def list_sessions(
-    user_id: int = Query(..., description="User ID"),
     controller: ChatSessionController = Depends(get_chat_session_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.list_sessions(user_id)
+    return await controller.list_sessions(current_user_id)
 
 
 @router.get(

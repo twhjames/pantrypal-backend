@@ -72,3 +72,6 @@ class UserAccountService:
 
         await self.auth_token_accessor.delete_by_user_id(user_id)
         await self.user_account_accessor.delete_by_id(user_id)
+
+    async def get_user(self, user_id: int) -> UserAccountDomain | None:
+        return await self.user_account_accessor.get_by_id(user_id)

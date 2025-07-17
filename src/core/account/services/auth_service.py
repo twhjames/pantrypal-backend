@@ -76,3 +76,21 @@ class AuthService:
 
     async def invalidate_user_tokens(self, user_id: int) -> None:
         await self.token_accessor.delete_by_user_id(user_id)
+
+    async def verify_auth_token(self, token: str) -> int:
+        """Verify a JWT token and return the associated user id."""
+        try:
+            user_id = self.auth_provider.decode_token(token)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+            )
+
+        auth_token = await self.token_accessor.get_by_token(token)
+        if not auth_token or auth_token.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+            )
+        return user_id

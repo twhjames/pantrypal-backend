@@ -48,7 +48,10 @@ class TestUserAccountEndpoints:
             "/account/register", json=register_payload
         )
         assert register_response.status_code == 200
-        user_id = register_response.json()["id"]
+        # login to obtain auth token
+        login_payload = {"email": email, "password": "password123"}
+        login_response = await async_client.post("/account/login", json=login_payload)
+        token = login_response.json()["token"]
 
         updated_email = f"{uuid4()}@example.com"
         update_payload = {
@@ -58,7 +61,9 @@ class TestUserAccountEndpoints:
         }
 
         response = await async_client.put(
-            f"/account/update?user_id={user_id}", json=update_payload
+            "/account/update",
+            json=update_payload,
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -92,8 +97,13 @@ class TestUserAccountEndpoints:
             "/account/register", json=register_payload
         )
         assert register_response.status_code == 200
-        user_id = register_response.json()["id"]
+        login_payload = {"email": email, "password": "password123"}
+        login_response = await async_client.post("/account/login", json=login_payload)
+        token = login_response.json()["token"]
 
-        response = await async_client.delete(f"/account/delete?user_id={user_id}")
+        response = await async_client.delete(
+            "/account/delete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         assert response.json()["detail"] == "User deleted successfully"

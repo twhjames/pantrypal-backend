@@ -5,6 +5,7 @@ from src.core.account.services.user_account_service import UserAccountService
 from src.pantrypal_api.account.controllers.user_account_controller import (
     UserAccountController,
 )
+from src.pantrypal_api.account.dependencies import get_current_user
 from src.pantrypal_api.account.schemas.user_account_schemas import (
     AuthTokenOut,
     LoginUserIn,
@@ -56,16 +57,17 @@ async def logout_user(
 
 @router.put("/update", response_model=UserOut)
 async def update_user(
-    user_id: int,
     data: UpdateUserIn,
+    current_user_id: int = Depends(get_current_user),
     controller: UserAccountController = Depends(get_account_controller),
 ):
-    return await controller.update_user(user_id, data)
+    return await controller.update_user(current_user_id, data)
 
 
 @router.delete("/delete")
 async def delete_user(
-    user_id: int, controller: UserAccountController = Depends(get_account_controller)
+    current_user_id: int = Depends(get_current_user),
+    controller: UserAccountController = Depends(get_account_controller),
 ):
-    await controller.delete_user(user_id)
+    await controller.delete_user(current_user_id)
     return {"detail": "User deleted successfully"}
