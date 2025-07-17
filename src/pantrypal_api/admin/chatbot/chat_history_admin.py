@@ -14,6 +14,7 @@ class ChatHistoryAdmin(PantryPalModelAdmin, model=ChatHistory):
         ChatHistory.content,
         ChatHistory.timestamp,
         ChatHistory.created_at,
+        ChatHistory.deleted_at,
         ChatHistory.updated_at,
     ]
 

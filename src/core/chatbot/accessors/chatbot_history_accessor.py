@@ -19,3 +19,8 @@ class IChatbotHistoryAccessor(ABC):
     @abstractmethod
     async def get_messages_by_session(self, session_id: int) -> List[ChatHistoryDomain]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def soft_delete_history_by_session(self, session_id: int) -> None:
+        """Mark all history entries for a session as deleted."""
+        raise NotImplementedError

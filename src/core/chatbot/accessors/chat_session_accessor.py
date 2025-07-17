@@ -23,3 +23,8 @@ class IChatSessionAccessor(ABC):
     ) -> ChatSessionDomain:
         """Update stored recipe details for a session."""
         raise NotImplementedError
+
+    @abstractmethod
+    async def soft_delete_session(self, session_id: int) -> None:
+        """Soft delete a chat session."""
+        raise NotImplementedError

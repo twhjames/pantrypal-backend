@@ -19,6 +19,9 @@ class ChatSessionController:
 
     async def get_history(self, session_id: int) -> List[Message]:
         """Retrieve the message log for a chat session."""
-        """Retrieve the message log for a chat session."""
         history = await self.chat_session_service.get_session_history(session_id)
         return [h.to_schema() for h in history]
+
+    async def delete_session(self, session_id: int) -> None:
+        """Soft delete a chat session and its history."""
+        await self.chat_session_service.delete_session(session_id)

@@ -13,16 +13,17 @@ class PantryPalModelAdmin(ModelView):
     icon = "fa-solid fa-database"
 
     # Common searchable and sortable fields
-    column_sortable_list = ["id", "created_at", "updated_at"]
+    column_sortable_list = ["id", "created_at", "updated_at", "deleted_at"]
     column_searchable_list = ["id"]
 
     # Exclude these from form by default
-    form_excluded_columns = ["id", "created_at", "updated_at"]
+    form_excluded_columns = ["id", "created_at", "updated_at", "deleted_at"]
 
     # Optional: add labels for readability
     column_labels = {
         "created_at": "Created At",
         "updated_at": "Updated At",
+        "deleted_at": "Deleted At",
     }
 
     # Default sort: newest first

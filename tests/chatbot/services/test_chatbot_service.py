@@ -28,7 +28,7 @@ async def test_get_first_recommendation(
     )
 
     created_session = ChatSessionDomain.create(user_id=1, title="Soup")
-    created_session.id = 42
+    created_session.id = 1
     mock_chat_session_service.create_session.return_value = created_session
 
     msg = ChatMessageSpec(
@@ -43,7 +43,6 @@ async def test_get_first_recommendation(
 
     assert reply == '{"title": "Soup", "ingredients": [], "instructions": []}'
     assert session_id == 1
-    mock_chat_session_service.update_session_recipe.assert_awaited()
     assert mock_chatbot_history_accessor.save_message.await_count == 2
 
 

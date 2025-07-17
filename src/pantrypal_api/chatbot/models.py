@@ -32,6 +32,7 @@ class ChatHistory(PantryPalBaseModel):
         return ChatHistoryDomain(
             id=self.id,
             created_at=self.created_at,
+            deleted_at=self.deleted_at,
             user_id=self.user_id,
             role=self.role,
             content=self.content,
@@ -56,6 +57,7 @@ class ChatSession(PantryPalBaseModel):
         return ChatSessionDomain(
             id=self.id,
             created_at=self.created_at,
+            deleted_at=self.deleted_at,
             user_id=self.user_id,
             title=self.title,
             summary=self.summary,

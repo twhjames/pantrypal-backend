@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 
 from src.core.chatbot.accessors.chat_session_accessor import IChatSessionAccessor
 from src.core.chatbot.models import ChatSessionDomain
+from src.core.common.utils import DateTimeUtils
 from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.chatbot.models import ChatSession
@@ -25,7 +26,9 @@ class ChatSessionAccessor(IChatSessionAccessor):
     async def list_sessions(self, user_id: int) -> List[ChatSessionDomain]:
         async with self.db_provider.get_db() as session:
             result = await session.execute(
-                select(ChatSession).where(ChatSession.user_id == user_id)
+                select(ChatSession)
+                .where(ChatSession.user_id == user_id)
+                .where(ChatSession.deleted_at.is_(None))
             )
             records = result.scalars().all()
             return [r.to_domain() for r in records]
@@ -56,6 +59,8 @@ class ChatSessionAccessor(IChatSessionAccessor):
             record = await db.get(ChatSession, session_id)
             if record is None:
                 raise ValueError("Session not found")
+            if record.deleted_at is not None:
+                raise ValueError("Session deleted")
 
             record.title = session_domain.title
             record.summary = session_domain.summary
@@ -68,3 +73,12 @@ class ChatSessionAccessor(IChatSessionAccessor):
             await db.commit()
             await db.refresh(record)
             return record.to_domain()
+
+    async def soft_delete_session(self, session_id: int) -> None:
+        async with self.db_provider.get_db() as db:
+            record = await db.get(ChatSession, session_id)
+            if record is None:
+                return
+            if record.deleted_at is None:
+                record.deleted_at = DateTimeUtils.get_utc_now()
+            await db.commit()
