@@ -9,9 +9,6 @@ from src.core.common.utils import DateTimeUtils
 
 
 class Message(BaseModel):
-    user_id: int = Field(
-        ..., description="Unique identifier of the user sending the message"
-    )
     session_id: Optional[int] = Field(
         default=None, description="Identifier of the chat session"
     )
@@ -40,9 +37,10 @@ class Message(BaseModel):
             self.timestamp = DateTimeUtils.get_utc_now()
         return self
 
-    def to_spec(self) -> ChatMessageSpec:
+    def to_spec(self, user_id: int) -> ChatMessageSpec:
+        """Convert the message to a domain spec with the provided user id."""
         return ChatMessageSpec(
-            user_id=self.user_id,
+            user_id=user_id,
             session_id=self.session_id,
             role=self.role,
             content=self.content,
@@ -57,7 +55,6 @@ class RecommendMessage(Message):
         json_schema_extra={
             "examples": [
                 {
-                    "user_id": 1,
                     "role": "user",
                     "content": "What can I make with rice and eggs?",
                     "timestamp": None,
@@ -74,7 +71,6 @@ class ContextualChatMessage(Message):
         json_schema_extra={
             "examples": [
                 {
-                    "user_id": 1,
                     "session_id": 10,
                     "role": "user",
                     "content": "Let's continue from earlier, any other ideas?",
@@ -98,6 +94,20 @@ class ChatReply(BaseModel):
                     "reply": "How about making egg fried rice with some soy sauce and vegetables?",
                     "session_id": 1,
                 }
+            ]
+        }
+    )
+
+
+class TitleSuggestions(BaseModel):
+    """List of short recipe title suggestions returned from the chatbot."""
+
+    suggestions: list[str] = Field(..., description="List of recipe title suggestions")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                ["Pasta Primavera", "Veggie Stir Fry", "Lemon Chicken", "Quinoa Salad"]
             ]
         }
     )

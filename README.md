@@ -383,21 +383,24 @@ src/pantrypal_api/admin/<feature>/admin.py
 
 ## 📦 API Endpoints
 
-| Method | Endpoint           | Description                        |
-| ------ | ------------------ | ---------------------------------- |
-| POST   | /account/register  | Register a new user                |
-| POST   | /account/login     | Login with email and password      |
-| POST   | /account/logout    | Invalidate the current auth token  |
-| PUT    | /account/update    | Update user information            |
-| DELETE | /account/delete    | Delete the user account            |
-| POST   | /chatbot/recommend | Get one-shot recipe recommendation |
-| POST   | /chatbot/chat      | Start multi-turn conversation      |
-| GET    | /pantry/list       | Get all pantry items for a user    |
-| POST   | /pantry/add        | Add new pantry items               |
-| PUT    | /pantry/update     | Update existing pantry items       |
-| POST   | /pantry/delete     | Delete pantry items by ID          |
+| Method | Endpoint                   | Description                        |
+| ------ | -------------------------- | ---------------------------------- |
+| POST   | /account/register          | Register a new user                |
+| POST   | /account/login             | Login with email and password      |
+| POST   | /account/logout            | Logout (use Authorization header)  |
+| PUT    | /account/update            | Update user information            |
+| DELETE | /account/delete            | Delete the user account            |
+| POST   | /chatbot/recommend         | Get one-shot recipe recommendation |
+| POST   | /chatbot/chat              | Start multi-turn conversation      |
+| GET    | /chatbot/title-suggestions | Quick list of recipe title ideas   |
+| GET    | /pantry/list               | Get all pantry items for a user    |
+| POST   | /pantry/add                | Add new pantry items               |
+| PUT    | /pantry/update             | Update existing pantry items       |
+| POST   | /pantry/delete             | Delete pantry items by ID          |
 
 Visit `/docs` for full Swagger documentation.
+
+### Authenticating in Swagger UI
 
 ---
 

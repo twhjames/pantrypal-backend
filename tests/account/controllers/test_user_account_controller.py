@@ -82,7 +82,10 @@ class TestUserAccountEndpoints:
         assert login_response.status_code == 200
         token = login_response.json()["token"]
 
-        response = await async_client.post(f"/account/logout?token={token}")
+        response = await async_client.post(
+            "/account/logout",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         assert response.json()["detail"] == "Logged out successfully"
 

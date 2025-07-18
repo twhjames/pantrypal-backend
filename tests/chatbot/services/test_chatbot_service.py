@@ -169,3 +169,27 @@ async def test_chat_with_context(
     mock_chatbot_history_accessor.get_recent_messages.assert_awaited_once()
     mock_chatbot_history_accessor.save_message.assert_awaited()
     mock_chat_session_service.update_session_recipe.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_get_recipe_title_suggestions(
+    mock_chatbot_provider,
+    mock_chatbot_history_accessor,
+    mock_pantry_service,
+    mock_chat_session_service,
+    mock_logging_provider,
+):
+    mock_chatbot_provider.handle_single_turn.return_value = '["A", "B", "C", "D"]'
+
+    service = ChatbotService(
+        chatbot_provider=mock_chatbot_provider,
+        chatbot_history_accessor=mock_chatbot_history_accessor,
+        pantry_service=mock_pantry_service,
+        chat_session_service=mock_chat_session_service,
+        logging_provider=mock_logging_provider,
+    )
+
+    result = await service.get_recipe_title_suggestions(1)
+
+    assert result == ["A", "B", "C", "D"]
+    mock_chatbot_provider.handle_single_turn.assert_awaited_once()
