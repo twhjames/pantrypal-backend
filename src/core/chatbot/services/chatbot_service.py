@@ -170,6 +170,31 @@ class ChatbotService:
             self.logging_provider.error(f"Error in chat_with_context: {str(e)}")
             raise
 
+    async def get_recipe_title_suggestions(self, user_id: int) -> list[str]:
+        """Return four quick recipe title ideas as a simple list of strings."""
+
+        prompt = (
+            "Suggest four distinct recipe titles. "
+            "Respond only with a JSON array of four strings."
+        )
+        message = self.__create_chat_message_spec(
+            user_id=user_id,
+            role=ChatbotMessageRole.USER,
+            content=prompt,
+            timestamp=DateTimeUtils.get_utc_now(),
+        )
+        reply = await self.chatbot_provider.handle_single_turn(message)
+        try:
+            data = json.loads(reply)
+            if not isinstance(data, list):
+                raise ValueError("Response not list")
+            return [str(t) for t in data]
+        except Exception:
+            self.logging_provider.error(
+                "Failed to parse recipe title suggestions", extra_data={"reply": reply}
+            )
+            raise ValueError("Invalid response from chatbot provider")
+
     def __create_chat_message_spec(
         self,
         user_id: int,

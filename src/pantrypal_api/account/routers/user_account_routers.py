@@ -5,7 +5,7 @@ from src.core.account.services.user_account_service import UserAccountService
 from src.pantrypal_api.account.controllers.user_account_controller import (
     UserAccountController,
 )
-from src.pantrypal_api.account.dependencies import get_current_user
+from src.pantrypal_api.account.dependencies import get_current_user, oauth2_scheme
 from src.pantrypal_api.account.schemas.user_account_schemas import (
     AuthTokenOut,
     LoginUserIn,
@@ -49,7 +49,9 @@ async def login_user(
 
 @router.post("/logout")
 async def logout_user(
-    token: str, controller: UserAccountController = Depends(get_account_controller)
+    token: str = Depends(oauth2_scheme),
+    current_user_id: int = Depends(get_current_user),
+    controller: UserAccountController = Depends(get_account_controller),
 ):
     await controller.logout(token)
     return {"detail": "Logged out successfully"}

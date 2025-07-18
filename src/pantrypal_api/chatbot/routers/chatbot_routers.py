@@ -15,6 +15,7 @@ from src.pantrypal_api.chatbot.schemas.chatbot_schemas import (
     ContextualChatMessage,
     Message,
     RecommendMessage,
+    TitleSuggestions,
 )
 from src.pantrypal_api.modules import injector
 
@@ -41,8 +42,9 @@ def get_chat_session_controller() -> ChatSessionController:
 async def recommend_recipe(
     message: RecommendMessage,
     controller: ChatbotController = Depends(get_chatbot_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.get_recipe_recommendation(message)
+    return await controller.get_recipe_recommendation(current_user_id, message)
 
 
 @router.post(
@@ -54,8 +56,22 @@ async def recommend_recipe(
 async def chat_with_history(
     message: ContextualChatMessage,
     controller: ChatbotController = Depends(get_chatbot_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
-    return await controller.get_contextual_chat_reply(message)
+    return await controller.get_contextual_chat_reply(current_user_id, message)
+
+
+@router.get(
+    "/title-suggestions",
+    response_model=TitleSuggestions,
+    summary="Get 4 recipe title suggestions for Homepage",
+    description="Return four short recipe title ideas",
+)
+async def recipe_title_suggestions(
+    controller: ChatbotController = Depends(get_chatbot_controller),
+    current_user_id: int = Depends(get_current_user),
+):
+    return await controller.get_recipe_title_suggestions(current_user_id)
 
 
 @router.get(
@@ -78,6 +94,7 @@ async def list_sessions(
 async def get_session_history(
     session_id: int,
     controller: ChatSessionController = Depends(get_chat_session_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
     return await controller.get_history(session_id)
 
@@ -90,5 +107,6 @@ async def get_session_history(
 async def delete_session(
     session_id: int,
     controller: ChatSessionController = Depends(get_chat_session_controller),
+    current_user_id: int = Depends(get_current_user),
 ):
     await controller.delete_session(session_id)

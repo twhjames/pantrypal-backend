@@ -48,7 +48,24 @@ class TestChatSessionEndpoints:
         assert isinstance(response.json(), list)
 
     async def test_get_session_history(self, async_client: AsyncClient):
-        response = await async_client.get("/chatbot/sessions/1")
+        await async_client.post(
+            "/account/register",
+            json={
+                "username": "hist",
+                "email": "hist@example.com",
+                "password": "pass123",
+            },
+        )
+        login_resp = await async_client.post(
+            "/account/login",
+            json={"email": "hist@example.com", "password": "pass123"},
+        )
+        token = login_resp.json()["token"]
+
+        response = await async_client.get(
+            "/chatbot/sessions/1",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
@@ -81,5 +98,22 @@ class TestChatSessionEndpoints:
         )
         await history_accessor.save_message(msg)
 
-        response = await async_client.delete(f"/chatbot/sessions/{created.id}")
+        await async_client.post(
+            "/account/register",
+            json={
+                "username": "del",
+                "email": "del@example.com",
+                "password": "pass123",
+            },
+        )
+        login_resp = await async_client.post(
+            "/account/login",
+            json={"email": "del@example.com", "password": "pass123"},
+        )
+        token = login_resp.json()["token"]
+
+        response = await async_client.delete(
+            f"/chatbot/sessions/{created.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 204
