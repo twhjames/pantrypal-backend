@@ -8,6 +8,7 @@ class UserAccountDomain(PantryPalMutableModelDomain):
     username: str
     email: str
     password_hash: str
+    is_admin: bool = False
 
     def to_schema(self) -> UserOut:
         return UserOut(
@@ -15,17 +16,19 @@ class UserAccountDomain(PantryPalMutableModelDomain):
             username=self.username,
             email=self.email,
             created_at=self.created_at,
+            is_admin=self.is_admin,
         )
 
     @classmethod
     def create(
-        cls, username: str, email: str, password_hash: str
+        cls, username: str, email: str, password_hash: str, is_admin: bool = False
     ) -> "UserAccountDomain":
         return cls(
             id=0,  # placeholder before DB insert
             username=username,
             email=email,
             password_hash=password_hash,
+            is_admin=is_admin,
         )
 
 

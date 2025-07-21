@@ -13,7 +13,11 @@ async def test_register_user_success(
     mock_auth_provider.get_hashed_password.return_value = "securehash"
 
     created_user = UserAccountDomain(
-        id=1, username="newuser", email="a@x.com", password_hash="securehash"
+        id=1,
+        username="newuser",
+        email="a@x.com",
+        password_hash="securehash",
+        is_admin=False,
     )
     mock_user_account_accessor.create_user.return_value = created_user
 
@@ -36,10 +40,18 @@ async def test_update_user(
     mock_user_account_accessor, mock_auth_provider, mock_logging_provider
 ):
     user_before = UserAccountDomain(
-        id=1, username="before", email="b@x.com", password_hash="old"
+        id=1,
+        username="before",
+        email="b@x.com",
+        password_hash="old",
+        is_admin=False,
     )
     user_after = UserAccountDomain(
-        id=1, username="after", email="a@x.com", password_hash="newhash"
+        id=1,
+        username="after",
+        email="a@x.com",
+        password_hash="newhash",
+        is_admin=False,
     )
 
     mock_user_account_accessor.get_by_id.return_value = user_before
@@ -64,7 +76,11 @@ async def test_delete_user(
     mock_user_account_accessor, mock_auth_token_accessor, mock_logging_provider
 ):
     user = UserAccountDomain(
-        id=1, username="delete", email="d@x.com", password_hash="x"
+        id=1,
+        username="delete",
+        email="d@x.com",
+        password_hash="x",
+        is_admin=False,
     )
     mock_user_account_accessor.get_by_id.return_value = user
 

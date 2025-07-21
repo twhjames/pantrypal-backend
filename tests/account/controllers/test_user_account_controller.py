@@ -22,6 +22,7 @@ class TestUserAccountEndpoints:
         assert data["username"] == payload["username"]
         assert data["email"] == payload["email"]
         assert "id" in data
+        assert data["is_admin"] is False
 
     async def test_login_user(self, async_client: AsyncClient):
         email = f"{uuid4()}@example.com"

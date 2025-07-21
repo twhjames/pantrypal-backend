@@ -13,7 +13,9 @@ class RegisterUserIn(BaseModel):
 
     def to_spec(self) -> RegisterUserSpec:
         return RegisterUserSpec(
-            username=self.username, email=self.email, password=self.password
+            username=self.username,
+            email=self.email,
+            password=self.password,
         )
 
 
@@ -41,6 +43,7 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr
     created_at: datetime
+    is_admin: bool
 
 
 class AuthTokenOut(BaseModel):

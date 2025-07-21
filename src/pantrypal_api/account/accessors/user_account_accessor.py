@@ -77,4 +77,5 @@ class UserAccountAccessor(IUserAccountAccessor):
             username=domain.username,
             email=domain.email,
             password_hash=domain.password_hash,
+            is_admin=domain.is_admin,
         )

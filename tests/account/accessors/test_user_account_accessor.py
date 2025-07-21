@@ -20,6 +20,7 @@ async def test_create_and_get_user(
         username="testuser",
         email="test@example.com",
         password_hash="hashedpass",
+        is_admin=False,
     )
 
     created = await accessor.create_user(user)
@@ -47,6 +48,7 @@ async def test_update_user(mock_relational_database_provider, mock_logging_provi
         username="before",
         email="update@example.com",
         password_hash="pass",
+        is_admin=False,
     )
     created = await accessor.create_user(user)
 
@@ -55,6 +57,7 @@ async def test_update_user(mock_relational_database_provider, mock_logging_provi
         username="after",
         email="update@example.com",
         password_hash="newpass",
+        is_admin=False,
     )
 
     result = await accessor.update_user(updated)
@@ -74,6 +77,7 @@ async def test_delete_user(mock_relational_database_provider, mock_logging_provi
         username="todelete",
         email="delete@example.com",
         password_hash="deletehash",
+        is_admin=False,
     )
     created = await accessor.create_user(user)
 

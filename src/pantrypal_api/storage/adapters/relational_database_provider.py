@@ -22,6 +22,8 @@ class RelationalDatabaseProvider(IDatabaseProvider):
     ):
         self.logging_provider = logging_provider
         db_url = secret_provider.get_secret(SecretKey.DATABASE_URL)
+        if not db_url:
+            raise ValueError("DATABASE_URL is required")
         self.engine = create_async_engine(db_url, echo=False)
         self.async_session_factory = sessionmaker(
             bind=self.engine, class_=AsyncSession, expire_on_commit=False
