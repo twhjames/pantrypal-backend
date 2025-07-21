@@ -10,6 +10,7 @@ from src.pantrypal_api.pantry.schemas.pantry_schemas import (
     AddPantryItemRequest,
     DeletePantryItemsRequest,
     PantryItemResponse,
+    PantryStatsResponse,
     UpdatePantryItemRequest,
 )
 
@@ -54,3 +55,19 @@ async def delete_pantry_items(
     current_user_id: int = Depends(get_current_user),
 ):
     await controller.delete_items(current_user_id, request)
+
+
+@router.get("/stats", response_model=PantryStatsResponse)
+async def pantry_stats(
+    controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
+):
+    return await controller.get_stats(current_user_id)
+
+
+@router.get("/expiring", response_model=List[PantryItemResponse])
+async def list_expiring_pantry_items(
+    controller: PantryController = Depends(get_pantry_controller),
+    current_user_id: int = Depends(get_current_user),
+):
+    return await controller.list_expiring_items(current_user_id)

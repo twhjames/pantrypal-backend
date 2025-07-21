@@ -205,8 +205,8 @@ async def setup_test_db():
     async with test_engine.begin() as conn:
         await conn.run_sync(PantryPalBaseModel.metadata.create_all)
     yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(PantryPalBaseModel.metadata.drop_all)
+    # Keep tables intact after tests to avoid accidental data loss
+    pass
 
 
 @pytest_asyncio.fixture
