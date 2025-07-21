@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from injector import inject
@@ -6,7 +6,7 @@ from injector import inject
 from src.core.common.utils import DateTimeUtils
 from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.pantry.accessors.pantry_item_accessor import IPantryItemAccessor
-from src.core.pantry.models import PantryItemDomain
+from src.core.pantry.models import PantryItemDomain, PantryStatsDomain
 from src.core.pantry.specs import (
     AddPantryItemSpec,
     DeletePantryItemsSpec,
@@ -99,4 +99,67 @@ class PantryService:
     async def get_items_sorted_by_expiry(self, user_id: int) -> List[PantryItemDomain]:
         items = await self.get_items(user_id)
         max_dt = datetime.max.replace(tzinfo=timezone.utc)
-        return sorted(items, key=lambda i: i.expiry_date or max_dt)
+
+        def _key(item: PantryItemDomain) -> datetime:
+            if item.expiry_date is None:
+                return max_dt
+            return (
+                item.expiry_date
+                if item.expiry_date.tzinfo
+                else item.expiry_date.replace(tzinfo=timezone.utc)
+            )
+
+        return sorted(items, key=_key)
+
+    async def get_pantry_stats(self, user_id: int) -> PantryStatsDomain:
+        items = await self.get_items(user_id)
+        now = DateTimeUtils.get_utc_now()
+        today = now.date()
+        soon_threshold = today + timedelta(days=7)
+
+        total = len(items)
+        expired = 0
+        expiring_today = 0
+        expiring_soon = 0
+
+        for item in items:
+            if not item.expiry_date:
+                continue
+            expiry_date = item.expiry_date.date()
+            if expiry_date < today:
+                expired += 1
+            elif expiry_date == today:
+                expiring_today += 1
+            elif today < expiry_date <= soon_threshold:
+                expiring_soon += 1
+
+        return PantryStatsDomain(
+            total_items=total,
+            expiring_soon=expiring_soon,
+            expiring_today=expiring_today,
+            expired=expired,
+        )
+
+    async def get_expiring_items(self, user_id: int) -> List[PantryItemDomain]:
+        items = await self.get_items(user_id)
+        now = DateTimeUtils.get_utc_now()
+        threshold = now + timedelta(days=7)
+        expiring: List[PantryItemDomain] = []
+        for item in items:
+            if not item.expiry_date:
+                continue
+            expiry = (
+                item.expiry_date
+                if item.expiry_date.tzinfo
+                else item.expiry_date.replace(tzinfo=timezone.utc)
+            )
+            if expiry <= threshold:
+                # store timezone-aware copy to avoid comparison issues later
+                item.expiry_date = expiry
+                expiring.append(item)
+        max_dt = datetime.max.replace(tzinfo=timezone.utc)
+
+        def _key(item: PantryItemDomain) -> datetime:
+            return item.expiry_date or max_dt
+
+        return sorted(expiring, key=_key)[:3]

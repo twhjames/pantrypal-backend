@@ -69,3 +69,10 @@ class PantryItemResponse(BaseModel):
     category: Optional[Category]
     purchase_date: Optional[datetime]
     expiry_date: Optional[datetime]
+
+
+class PantryStatsResponse(BaseModel):
+    total: int
+    expiring_soon: int
+    expiring_today: int
+    expired: int

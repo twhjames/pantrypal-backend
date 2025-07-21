@@ -1,6 +1,11 @@
+# flake8: noqa: E402
 import asyncio
 import sys
 from pathlib import Path
+
+# Ensure the repository root is on the path so `src` imports work when running
+# this script directly via `python scripts/create_superuser.py`.
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.core.account.accessors.user_account_accessor import IUserAccountAccessor
 from src.core.account.models import UserAccountDomain
@@ -8,10 +13,6 @@ from src.core.account.ports.auth_provider import IAuthProvider
 from src.core.common.constants import SecretKey
 from src.core.common.ports.secretkey_provider import ISecretProvider
 from src.pantrypal_api.modules import injector
-
-# Ensure the repository root is on the path so `src` imports work when running
-# this script directly via `python scripts/create_superuser.py`.
-sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
 async def create_superuser() -> None:

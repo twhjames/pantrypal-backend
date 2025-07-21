@@ -7,6 +7,7 @@ from src.pantrypal_api.pantry.schemas.pantry_schemas import (
     AddPantryItemRequest,
     DeletePantryItemsRequest,
     PantryItemResponse,
+    PantryStatsResponse,
     UpdatePantryItemRequest,
 )
 
@@ -37,3 +38,11 @@ class PantryController:
     async def delete_items(self, user_id: int, data: DeletePantryItemsRequest) -> None:
         spec = data.to_spec()
         await self.pantry_service.delete_items(user_id, spec)
+
+    async def get_stats(self, user_id: int) -> PantryStatsResponse:
+        stats = await self.pantry_service.get_pantry_stats(user_id)
+        return stats.to_schema()
+
+    async def list_expiring_items(self, user_id: int) -> List[PantryItemResponse]:
+        items = await self.pantry_service.get_expiring_items(user_id)
+        return [item.to_schema() for item in items]

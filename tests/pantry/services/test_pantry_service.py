@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from src.core.common.utils import DateTimeUtils
 from src.core.pantry.constants import Category, Unit
 from src.core.pantry.models import PantryItemDomain
 from src.core.pantry.services.pantry_service import PantryService
@@ -192,3 +193,238 @@ async def test_get_items_sorted_by_expiry(
     result = await service.get_items_sorted_by_expiry(user_id=1)
 
     assert [i.id for i in result] == [2, 1, 3]
+
+
+@pytest.mark.asyncio
+async def test_get_pantry_stats(mock_pantry_item_accessor, mock_logging_provider):
+    now = DateTimeUtils.get_utc_now()
+    items = [
+        PantryItemDomain(
+            id=1,
+            user_id=1,
+            item_name="Expired",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now - timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=2,
+            user_id=1,
+            item_name="Today",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now,
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=3,
+            user_id=1,
+            item_name="Soon",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=3),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=4,
+            user_id=1,
+            item_name="Later",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=20),
+            created_at=now,
+            updated_at=now,
+        ),
+    ]
+
+    mock_pantry_item_accessor.get_items_by_user.return_value = items
+
+    service = PantryService(mock_pantry_item_accessor, mock_logging_provider)
+    stats = await service.get_pantry_stats(user_id=1)
+
+    assert stats.total_items == 4
+    assert stats.expired == 1
+    assert stats.expiring_today == 1
+    assert stats.expiring_soon == 1
+
+
+@pytest.mark.asyncio
+async def test_get_expiring_items(mock_pantry_item_accessor, mock_logging_provider):
+    now = DateTimeUtils.get_utc_now()
+    items = [
+        PantryItemDomain(
+            id=1,
+            user_id=1,
+            item_name="Expired",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now - timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=2,
+            user_id=1,
+            item_name="Soon",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=3),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=3,
+            user_id=1,
+            item_name="Later",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=10),
+            created_at=now,
+            updated_at=now,
+        ),
+    ]
+
+    mock_pantry_item_accessor.get_items_by_user.return_value = items
+
+    service = PantryService(mock_pantry_item_accessor, mock_logging_provider)
+    result = await service.get_expiring_items(user_id=1)
+
+    assert [i.id for i in result] == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_get_expiring_items_handles_naive_datetimes(
+    mock_pantry_item_accessor, mock_logging_provider, monkeypatch
+):
+    """Ensure naive expiry dates do not cause comparison errors."""
+    now = DateTimeUtils.get_utc_now()
+    monkeypatch.setattr(DateTimeUtils, "get_utc_now", lambda: now)
+    items = [
+        PantryItemDomain(
+            id=1,
+            user_id=1,
+            item_name="Expired",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=(now - timedelta(days=1)).replace(tzinfo=None),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=2,
+            user_id=1,
+            item_name="Soon",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=(now + timedelta(days=3)).replace(tzinfo=None),
+            created_at=now,
+            updated_at=now,
+        ),
+    ]
+
+    mock_pantry_item_accessor.get_items_by_user.return_value = items
+
+    service = PantryService(mock_pantry_item_accessor, mock_logging_provider)
+    result = await service.get_expiring_items(user_id=1)
+
+    assert [i.id for i in result] == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_get_expiring_items_returns_top_three(
+    mock_pantry_item_accessor, mock_logging_provider, monkeypatch
+):
+    """Only the three soonest expiring items are returned."""
+    now = DateTimeUtils.get_utc_now()
+    monkeypatch.setattr(DateTimeUtils, "get_utc_now", lambda: now)
+    items = [
+        PantryItemDomain(
+            id=1,
+            user_id=1,
+            item_name="Expired",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now - timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=2,
+            user_id=1,
+            item_name="Soon1",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=3,
+            user_id=1,
+            item_name="Soon2",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=2),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=4,
+            user_id=1,
+            item_name="Soon3",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=3),
+            created_at=now,
+            updated_at=now,
+        ),
+        PantryItemDomain(
+            id=5,
+            user_id=1,
+            item_name="Soon4",
+            quantity=1,
+            unit=Unit.GRAMS,
+            category=Category.FRUITS,
+            purchase_date=None,
+            expiry_date=now + timedelta(days=4),
+            created_at=now,
+            updated_at=now,
+        ),
+    ]
+
+    mock_pantry_item_accessor.get_items_by_user.return_value = items
+
+    service = PantryService(mock_pantry_item_accessor, mock_logging_provider)
+    result = await service.get_expiring_items(user_id=1)
+
+    assert [i.id for i in result] == [1, 2, 3]

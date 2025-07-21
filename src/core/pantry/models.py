@@ -1,10 +1,15 @@
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel
+
 from src.core.base.models import PantryPalMutableModelDomain
 from src.core.common.utils import DateTimeUtils
 from src.core.pantry.constants import Category, Unit
-from src.pantrypal_api.pantry.schemas.pantry_schemas import PantryItemResponse
+from src.pantrypal_api.pantry.schemas.pantry_schemas import (
+    PantryItemResponse,
+    PantryStatsResponse,
+)
 
 
 class PantryItemDomain(PantryPalMutableModelDomain):
@@ -51,4 +56,19 @@ class PantryItemDomain(PantryPalMutableModelDomain):
             expiry_date=expiry_date,
             created_at=now,
             updated_at=now,
+        )
+
+
+class PantryStatsDomain(BaseModel):
+    total_items: int
+    expiring_soon: int
+    expiring_today: int
+    expired: int
+
+    def to_schema(self) -> "PantryStatsResponse":
+        return PantryStatsResponse(
+            total=self.total_items,
+            expiring_soon=self.expiring_soon,
+            expiring_today=self.expiring_today,
+            expired=self.expired,
         )
