@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
@@ -15,6 +16,21 @@ from src.core.expiry.ports.supermarket_expiry_provider import ISupermarketExpiry
 from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.base.models import PantryPalBaseModel
+from src.pantrypal_api.modules import injector
+
+# Ensure the app uses the in-memory database for tests
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ.setdefault("AUTH_SECRET_KEY", "test-secret")
+os.environ.setdefault("AUTH_ALGORITHM", "HS256")
+os.environ.setdefault("AUTH_TOKEN_EXPIRY_MINUTES", "60")
+os.environ.setdefault("ADMIN_USERNAME", "admin")
+os.environ.setdefault("ADMIN_EMAIL", "admin@example.com")
+os.environ.setdefault("ADMIN_PASSWORD", "admin123")
+os.environ.setdefault("CHATBOT_MAX_TOKENS", "128")
+os.environ.setdefault("CHATBOT_MAX_CHAT_HISTORY", "5")
+os.environ.setdefault("CHATBOT_MODEL", "noop")
+os.environ.setdefault("GROQ_API_KEY", "dummy")
+
 
 """
 conftest.py — Shared test fixtures for the PantryPal FastAPI application.
@@ -173,11 +189,15 @@ def mock_configuration_accessor():
 # TEST DATABASE SETUP (In-Memory SQLite)
 # ===============================
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-test_engine = create_async_engine(TEST_DATABASE_URL, future=True)
+test_engine = create_async_engine(os.environ["DATABASE_URL"], future=True)
 TestingSessionLocal = sessionmaker(
     bind=test_engine, class_=AsyncSession, expire_on_commit=False
 )
+
+# Patch the app's database provider to use the test engine
+provider = injector.get(IDatabaseProvider)
+provider.engine = test_engine
+provider.async_session_factory = TestingSessionLocal
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)

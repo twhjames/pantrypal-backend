@@ -7,6 +7,7 @@ from src.pantrypal_api.admin.account.account_admin import (
     AuthTokenAdmin,
     UserAccountAdmin,
 )
+from src.pantrypal_api.admin.auth import AdminAuth
 from src.pantrypal_api.admin.chatbot.chat_history_admin import ChatHistoryAdmin
 from src.pantrypal_api.admin.chatbot.chat_session_admin import ChatSessionAdmin
 from src.pantrypal_api.admin.configuration.configuration_admin import ConfigurationAdmin
@@ -21,10 +22,10 @@ def setup_admin(app: FastAPI, db_provider: IDatabaseProvider):
     :param db_provider: Database provider containing the SQLAlchemy engine
     """
 
-    # Directly access the engine from provider
+    # Directly access the engine from provider and initialize the admin site
     engine = db_provider.engine
     # Use CustomAdmin instead of Admin
-    admin = PantryPalAdminSite(app, engine)
+    admin = PantryPalAdminSite(app, engine, authentication_backend=AdminAuth())
 
     # Register admin views
     admin.add_view(UserAccountAdmin)

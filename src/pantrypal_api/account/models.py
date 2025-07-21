@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from src.core.account.models import AuthTokenDomain, UserAccountDomain
 from src.pantrypal_api.base.models import PantryPalBaseModel
@@ -10,6 +10,7 @@ class UserAccount(PantryPalBaseModel):
     username = Column(String)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    is_admin = Column(Boolean, default=False)
 
     def to_domain(self) -> UserAccountDomain:
         return UserAccountDomain(
@@ -19,6 +20,7 @@ class UserAccount(PantryPalBaseModel):
             username=self.username,
             email=self.email,
             password_hash=self.password_hash,
+            is_admin=self.is_admin,
         )
 
 

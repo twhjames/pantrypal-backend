@@ -15,7 +15,11 @@ async def test_login_success(
     mock_logging_provider,
 ):
     user = UserAccountDomain(
-        id=1, username="test", email="test@example.com", password_hash="pass_hashed"
+        id=1,
+        username="test",
+        email="test@example.com",
+        password_hash="pass_hashed",
+        is_admin=False,
     )
     token = AuthTokenDomain(
         id=1,

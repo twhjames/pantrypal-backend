@@ -194,6 +194,9 @@ PantryPal uses environment variables to configure database connections and exter
 | `AUTH_SECRET_KEY`           | Secret key for signing JWT tokens                                     |
 | `AUTH_ALGORITHM`            | Algorithm for JWT signing (e.g., `HS256`)                             |
 | `AUTH_TOKEN_EXPIRY_MINUTES` | Token expiry duration in minutes (e.g., `1440`)                       |
+| `ADMIN_USERNAME`            | Username for the admin account                                        |
+| `ADMIN_EMAIL`               | Email for the admin account                                           |
+| `ADMIN_PASSWORD`            | Password for the admin account                                        |
 
 ---
 
@@ -364,12 +367,25 @@ PantryPal includes a custom-styled **SQLAdmin** panel for managing core system r
 Once the FastAPI server is running, access the admin dashboard at:
 [http://localhost:8000/admin](http://localhost:8000/admin)
 
+Use the SQLAdmin login form at `/admin/login` with your configured admin
+credentials. After authenticating, a bearer token is stored in a secure cookie
+and you can visit `/docs` to use Swagger with the same credentials.
+
 The dashboard offers:
 
 -   A customizable landing page with card-based UI powered by Tabler CSS
 -   Intuitive CRUD operations for registered models like chat history and configuration values
 -   Model-level filtering, sorting, searching, and export capabilities
 -   An alternative to external tools like SQLite Browser or raw SQL queries
+
+> **Admin Credentials**
+>
+> The admin dashboard is protected by credentials sourced from environment
+> variables. Define `ADMIN_USERNAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`
+> in your `.env` file **before** starting the server. Missing values will
+> prevent the application from booting. After setting these variables,
+> run `python scripts/create_superuser.py` once to create the initial admin
+> account.
 
 Admin views are defined using SQLAdmin’s `ModelView` inheritance and registered via `PantryPalAdminSite` in:
 
@@ -401,6 +417,9 @@ src/pantrypal_api/admin/<feature>/admin.py
 Visit `/docs` for full Swagger documentation.
 
 ### Authenticating in Swagger UI
+
+Access to `/docs` is restricted to admin users. Navigate to `/admin/login`, sign in with the credentials configured in your `.env`, and the server will set a cookie allowing you to open the Swagger
+interface.
 
 ---
 

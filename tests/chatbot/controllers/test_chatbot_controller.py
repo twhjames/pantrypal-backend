@@ -1,10 +1,20 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
 class TestChatbotEndpoints:
-    async def test_recommend_endpoint(self, async_client: AsyncClient):
+    async def test_recommend_endpoint(self, async_client: AsyncClient, monkeypatch):
+        monkeypatch.setattr(
+            "src.pantrypal_api.chatbot.adapters.chatbot_provider.GroqChatbotProvider.handle_multi_turn",
+            AsyncMock(
+                return_value=(
+                    '{"title": "Salmon Bowl", "ingredients": [], "instructions": []}'
+                )
+            ),
+        )
         await async_client.post(
             "/account/register",
             json={
@@ -36,7 +46,11 @@ class TestChatbotEndpoints:
         assert "reply" in data
         assert "session_id" in data
 
-    async def test_chat_endpoint(self, async_client: AsyncClient):
+    async def test_chat_endpoint(self, async_client: AsyncClient, monkeypatch):
+        monkeypatch.setattr(
+            "src.pantrypal_api.chatbot.adapters.chatbot_provider.GroqChatbotProvider.handle_multi_turn",
+            AsyncMock(return_value="Here is a reply"),
+        )
         await async_client.post(
             "/account/register",
             json={

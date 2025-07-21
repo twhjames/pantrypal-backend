@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 
+from dotenv import load_dotenv
 from injector import inject
 
 from src.core.common.constants import SecretKey
@@ -12,6 +13,8 @@ class EnvVariableSecretProvider(ISecretProvider):
     @inject
     def __init__(self, logging_provider: ILoggingProvider):
         self.logging_provider = logging_provider
+        # Load environment variables from a .env file if present
+        load_dotenv()
 
     def get_secret(
         self, key: SecretKey, default: Optional[str] = None

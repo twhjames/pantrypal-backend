@@ -36,7 +36,9 @@ class UserAccountService:
         hashed_password = self.auth_provider.get_hashed_password(spec.password)
 
         user = UserAccountDomain.create(
-            username=spec.username, email=spec.email, password_hash=hashed_password
+            username=spec.username,
+            email=spec.email,
+            password_hash=hashed_password,
         )
 
         return await self.user_account_accessor.create_user(user)
