@@ -1,13 +1,14 @@
-from fastapi import FastAPI, UploadFile, File
-import uuid
 import base64
 import json
-import requests
-import re
-
-from dotenv import load_dotenv
-from groq import Groq
 import os
+import re
+import uuid
+
+import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, UploadFile
+from groq import Groq
+
 load_dotenv()
 
 
@@ -16,34 +17,82 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Subcategories (as before)
 subcategories = [
-    'Baby & Toddler Food', 'Baking Needs', 'Beef & Lamb', 'Beer', 'Beverages', 'Biscuits', 'Breads',
-    'Breakfast', 'Butter, Margarine & Spreads', 'Canned Food', 'Champagne & Sparkling Wine', 'Cheese',
-    'Chicken', 'Chilled Beverages', 'Chilled Food', 'Chocolates', 'Coffee', 'Condiments',
-    'Cooking Paste & Sauces', 'Cream', 'Delicatessen', 'Dried Fruits & Nuts', 'Drink Mixers', 'Eggs',
-    'Fish & Seafood', 'Fresh Milk', 'Frozen Desserts', 'Frozen Food', 'Frozen Meat', 'Frozen Seafood',
-    'Fruits', 'Ice Cream', 'Infant Formula', 'Jams, Spreads & Honey', 'Juices', 'Meatballs', 'Milk Powder',
-    'Non Alcoholic', 'Noodles', 'Oil', 'Pasta', 'Pork', 'Ready-To-Eat', 'Rice', 'Seasonings', 'Snacks',
-    'Soups', 'Spirits', 'Sugar & Sweeteners', 'Sweets', 'Tea', 'Uht Milk', 'Vegetables', 'Water', 'Wine',
-    'Yoghurt'
+    "Baby & Toddler Food",
+    "Baking Needs",
+    "Beef & Lamb",
+    "Beer",
+    "Beverages",
+    "Biscuits",
+    "Breads",
+    "Breakfast",
+    "Butter, Margarine & Spreads",
+    "Canned Food",
+    "Champagne & Sparkling Wine",
+    "Cheese",
+    "Chicken",
+    "Chilled Beverages",
+    "Chilled Food",
+    "Chocolates",
+    "Coffee",
+    "Condiments",
+    "Cooking Paste & Sauces",
+    "Cream",
+    "Delicatessen",
+    "Dried Fruits & Nuts",
+    "Drink Mixers",
+    "Eggs",
+    "Fish & Seafood",
+    "Fresh Milk",
+    "Frozen Desserts",
+    "Frozen Food",
+    "Frozen Meat",
+    "Frozen Seafood",
+    "Fruits",
+    "Ice Cream",
+    "Infant Formula",
+    "Jams, Spreads & Honey",
+    "Juices",
+    "Meatballs",
+    "Milk Powder",
+    "Non Alcoholic",
+    "Noodles",
+    "Oil",
+    "Pasta",
+    "Pork",
+    "Ready-To-Eat",
+    "Rice",
+    "Seasonings",
+    "Snacks",
+    "Soups",
+    "Spirits",
+    "Sugar & Sweeteners",
+    "Sweets",
+    "Tea",
+    "Uht Milk",
+    "Vegetables",
+    "Water",
+    "Wine",
+    "Yoghurt",
 ]
+
 
 def extract_json(text):
     # Try to find a ```json ... ``` block
-    match = re.search(r'```(?:json)?\s*(\[\s*{.*?}\s*\])\s*```', text, re.DOTALL)
+    match = re.search(r"```(?:json)?\s*(\[\s*{.*?}\s*\])\s*```", text, re.DOTALL)
     if match:
         return match.group(1)
-    
+
     # Fallback: look for any array of dicts
-    match = re.search(r'(\[\s*{.*?}\s*\])', text, re.DOTALL)
+    match = re.search(r"(\[\s*{.*?}\s*\])", text, re.DOTALL)
     if match:
         return match.group(1)
-    
+
     raise ValueError("No valid JSON array found in the LLM output.")
 
 
 def classify_receipt_items(receipt_json: dict) -> list:
-    cleaned_items = receipt_json['Items']
-    final_items = [item['ITEM'].replace("\n", " ") for item in cleaned_items]
+    cleaned_items = receipt_json["Items"]
+    final_items = [item["ITEM"].replace("\n", " ") for item in cleaned_items]
 
     subcat_text = ", ".join(f'"{cat}"' for cat in subcategories)
 
@@ -92,15 +141,17 @@ Return your answer in only JSON array format with fields:
 - ITEM
 - CATEGORY ("food" or "non-food")
 - SUBCATEGORY (must match exactly one of the listed values, or null for non-food)
-- QUANTITY 
+- QUANTITY
 
 Items:
-""" + "\n".join(f"{i+1}. {item}" for i, item in enumerate(final_items))
+""" + "\n".join(
+        f"{i+1}. {item}" for i, item in enumerate(final_items)
+    )
 
     response = client.chat.completions.create(
         model="llama3-70b-8192",
         temperature=0.2,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
     )
 
     raw_output = response.choices[0].message.content
@@ -111,8 +162,13 @@ Items:
 app = FastAPI()
 
 # ✅ AWS Lambda API Gateway endpoint (receives base64 image)
-UPLOAD_API_URL = "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/upload_receipts"
-RETRIEVE_API_URL = "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/receipt-status"  
+UPLOAD_API_URL = (
+    "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/upload_receipts"
+)
+RETRIEVE_API_URL = (
+    "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/receipt-status"
+)
+
 
 # 🟩 Route: Upload a receipt image
 @app.post("/upload-receipt/")
@@ -131,7 +187,7 @@ async def upload_receipt(file: UploadFile = File(...)):
     payload = {
         "user_id": user_id,
         "receipt_id": receipt_id,
-        "image_base64": encoded_image
+        "image_base64": encoded_image,
     }
 
     # 🚀 Step 5: Send to AWS Lambda
@@ -144,38 +200,33 @@ async def upload_receipt(file: UploadFile = File(...)):
     return {
         "message": "Upload successful",
         "user_id": user_id,
-        "receipt_id": receipt_id
+        "receipt_id": receipt_id,
     }
+
 
 # 🟦 Route: Retrieve scanned result
 @app.get("/get-classified-receipt-result/")
 def get_result(user_id: str, receipt_id: str):
-    response = requests.get(RETRIEVE_API_URL, params={
-        "user_id": user_id,
-        "receipt_id": receipt_id
-    })
+    response = requests.get(
+        RETRIEVE_API_URL, params={"user_id": user_id, "receipt_id": receipt_id}
+    )
 
     if response.status_code != 200:
         return {"error": "Result not ready", "details": response.text}
 
     try:
         # return response.json()
-         receipt_json = response.json()
+        receipt_json = response.json()
 
         # Step 2: Classify items using Groq
-         classification_result = classify_receipt_items(receipt_json)
+        classification_result = classify_receipt_items(receipt_json)
 
-         return {
+        return {
             "receipt_id": receipt_id,
             "vendor": receipt_json.get("Vendor"),
             "date": receipt_json.get("Date"),
-            "classified_items": classification_result
+            "classified_items": classification_result,
         }
-
-
 
     except Exception as e:
         return {"error": "Failed to process response", "exception": str(e)}
-
-
-
