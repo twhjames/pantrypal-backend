@@ -1,5 +1,4 @@
 from fastapi import FastAPI, UploadFile, File
-from utils import filter_food_items
 import uuid
 import base64
 import json
