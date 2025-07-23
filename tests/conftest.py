@@ -14,6 +14,7 @@ from src.core.common.ports.secretkey_provider import ISecretProvider
 from src.core.expiry.ports.expiry_prediction_provider import IExpiryPredictionProvider
 from src.core.expiry.ports.supermarket_expiry_provider import ISupermarketExpiryProvider
 from src.core.logging.ports.logging_provider import ILoggingProvider
+from src.core.storage.ports.object_storage_provider import IObjectStorageProvider
 from src.core.storage.ports.relational_database_provider import IDatabaseProvider
 from src.pantrypal_api.base.models import PantryPalBaseModel
 from src.pantrypal_api.modules import injector
@@ -92,6 +93,12 @@ def mock_chatbot_provider():
 @pytest.fixture
 def mock_secret_key_provider(mock_logging_provider):
     provider = MagicMock(spec=ISecretProvider)
+    return provider
+
+
+@pytest.fixture
+def mock_object_storage_provider():
+    provider = MagicMock(spec=IObjectStorageProvider)
     return provider
 
 

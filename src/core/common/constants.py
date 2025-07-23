@@ -15,6 +15,7 @@ class SecretKey(str, Enum):
     ADMIN_USERNAME = "ADMIN_USERNAME"
     ADMIN_EMAIL = "ADMIN_EMAIL"
     ADMIN_PASSWORD = "ADMIN_PASSWORD"
+    RECEIPT_UPLOAD_BUCKET = "RECEIPT_UPLOAD_BUCKET"
 
 
 SINGLE_VALUE_JSON_FIELD_TYPES = Optional[Union[str, int, float, Decimal, bool]]
