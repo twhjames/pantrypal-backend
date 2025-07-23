@@ -36,6 +36,10 @@ This repository contains the **FastAPI backend** services powering the PantryPal
     -   User registration, login, logout, update, and delete
     -   Token-based authentication with JWT
     -   Secure password hashing and session management
+-   🧾 Receipt Processing Pipeline
+    -   Short-lived AWS S3 upload URLs for receipt images
+    -   AWS Textract OCR to extract receipt content
+    -   Webhook to classify OCR results and add items to the pantry
 
 ---
 
@@ -47,6 +51,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
 | Database           | SQLite (development)                               |
 | ORM                | SQLAlchemy                                         |
 | Recommender Engine | LLaMA via Groq API (hosted inference)              |
+| Cloud Services     | AWS S3, Lambda, Textract                           |
 | Authentication     | JWT (via `python-jose`) + bcrypt                   |
 | API Documentation  | Swagger (auto-generated)                           |
 | Admin Panel        | SQLAdmin + Tabler UI                               |
@@ -142,6 +147,7 @@ This overview helps you navigate the folders and understand where to implement o
 | `expiry`        | Predicts expiry dates based on item category or supermarket-specific logic |
 | `logging`       | Provides centralized application logging using the Python `logging` module |
 | `pantry`        | Manages pantry item CRUD operations and user grocery inventory             |
+| `receipt`       | Processes receipt OCR webhooks and provides upload URLs                    |
 | `storage`       | Abstracts storage layers (e.g., DB providers, cloud object stores)         |
 
 ---
@@ -197,6 +203,7 @@ PantryPal uses environment variables to configure database connections and exter
 | `ADMIN_USERNAME`            | Username for the admin account                                        |
 | `ADMIN_EMAIL`               | Email for the admin account                                           |
 | `ADMIN_PASSWORD`            | Password for the admin account                                        |
+| `RECEIPT_UPLOAD_BUCKET`     | S3 bucket name for receipt uploads                                    |
 
 ---
 
@@ -413,6 +420,8 @@ src/pantrypal_api/admin/<feature>/admin.py
 | POST   | /pantry/add                | Add new pantry items               |
 | PUT    | /pantry/update             | Update existing pantry items       |
 | POST   | /pantry/delete             | Delete pantry items by ID          |
+| POST   | /receipts/presigned-url    | Get an S3 upload URL               |
+| POST   | /receipts/webhook          | Webhook for receipt OCR results    |
 
 Visit `/docs` for full Swagger documentation.
 
