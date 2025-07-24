@@ -19,4 +19,4 @@ class ReceiptUploadController:
         self.upload_service = upload_service
 
     def create_url(self, user_id: int) -> dict:
-        return self.upload_service.create_receipt_upload_url(user_id)
+        return self.upload_service.create_receipt_upload_url_poc(user_id)

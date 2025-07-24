@@ -38,6 +38,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
     -   Secure password hashing and session management
 -   🧾 Receipt Processing Pipeline
     -   Short-lived AWS S3 upload URLs for receipt images
+    -   POC AWS endpoints for uploading receipts and polling results
     -   AWS Textract OCR to extract receipt content
     -   Webhook to classify OCR results and add items to the pantry
 
@@ -204,6 +205,8 @@ PantryPal uses environment variables to configure database connections and exter
 | `ADMIN_EMAIL`               | Email for the admin account                                           |
 | `ADMIN_PASSWORD`            | Password for the admin account                                        |
 | `RECEIPT_UPLOAD_BUCKET`     | S3 bucket name for receipt uploads                                    |
+| `RECEIPT_UPLOAD_ENDPOINT`   | Upload URL for the receipt pipeline (POC)                             |
+| `RECEIPT_RETRIEVE_ENDPOINT` | Retrieval URL for the receipt pipeline (POC)                          |
 
 ---
 
@@ -420,8 +423,8 @@ src/pantrypal_api/admin/<feature>/admin.py
 | POST   | /pantry/add                | Add new pantry items               |
 | PUT    | /pantry/update             | Update existing pantry items       |
 | POST   | /pantry/delete             | Delete pantry items by ID          |
-| POST   | /receipts/presigned-url    | Get an S3 upload URL               |
-| POST   | /receipts/webhook          | Webhook for receipt OCR results    |
+| POST   | /receipt/presigned-url     | Get an S3 upload URL               |
+| POST   | /receipt/webhook           | Webhook for receipt OCR results    |
 
 Visit `/docs` for full Swagger documentation.
 
