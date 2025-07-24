@@ -49,3 +49,27 @@ class ObjectStorageService:
             )
             return None
         return self.create_upload_url(bucket=bucket, key_prefix=str(user_id))
+
+    def create_receipt_upload_url_poc(self, user_id: int) -> dict | None:
+        """Return static AWS endpoints for the receipt pipeline.
+
+        TODO: remove this once the cloud infrastructure supports presigned
+        uploads via :meth:`create_receipt_upload_url`.
+        """
+        upload_url = self.secret_provider.get_secret(SecretKey.RECEIPT_UPLOAD_ENDPOINT)
+        retrieve_url = self.secret_provider.get_secret(
+            SecretKey.RECEIPT_RETRIEVE_ENDPOINT
+        )
+        if not upload_url or not retrieve_url:
+            self.logging_provider.error(
+                "RECEIPT_UPLOAD_ENDPOINT and/or RECEIPT_RETRIEVE_ENDPOINT are not configured",
+                tag="ObjectStorageService",
+            )
+            return None
+        receipt_id = str(uuid4())
+
+        return {
+            "receipt_id": receipt_id,
+            "upload_url": upload_url,
+            "retrieve_url": retrieve_url,
+        }

@@ -162,12 +162,8 @@ Items:
 app = FastAPI()
 
 # ✅ AWS Lambda API Gateway endpoint (receives base64 image)
-UPLOAD_API_URL = (
-    "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/upload_receipts"
-)
-RETRIEVE_API_URL = (
-    "https://q2wq7z7gbh.execute-api.ap-southeast-2.amazonaws.com/receipt-status"
-)
+UPLOAD_API_URL = "https://.../upload_receipts"
+RETRIEVE_API_URL = "https://.../receipt-status"
 
 
 # 🟩 Route: Upload a receipt image

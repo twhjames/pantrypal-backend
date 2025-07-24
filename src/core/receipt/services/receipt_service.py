@@ -14,105 +14,11 @@ from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.pantry.constants import Category, Unit
 from src.core.pantry.services.pantry_service import PantryService
 from src.core.pantry.specs import AddPantryItemSpec
+from src.core.receipt.constants import SUBCAT_TO_CATEGORY, SUBCATEGORIES
 
 
 class ReceiptService:
     """Service for handling receipt webhook data."""
-
-    _SUBCATEGORIES = [
-        "Baby & Toddler Food",
-        "Baking Needs",
-        "Beef & Lamb",
-        "Beer",
-        "Beverages",
-        "Biscuits",
-        "Breads",
-        "Breakfast",
-        "Butter, Margarine & Spreads",
-        "Canned Food",
-        "Champagne & Sparkling Wine",
-        "Cheese",
-        "Chicken",
-        "Chilled Beverages",
-        "Chilled Food",
-        "Chocolates",
-        "Coffee",
-        "Condiments",
-        "Cooking Paste & Sauces",
-        "Cream",
-        "Delicatessen",
-        "Dried Fruits & Nuts",
-        "Drink Mixers",
-        "Eggs",
-        "Fish & Seafood",
-        "Fresh Milk",
-        "Frozen Desserts",
-        "Frozen Food",
-        "Frozen Meat",
-        "Frozen Seafood",
-        "Fruits",
-        "Ice Cream",
-        "Infant Formula",
-        "Jams, Spreads & Honey",
-        "Juices",
-        "Meatballs",
-        "Milk Powder",
-        "Non Alcoholic",
-        "Noodles",
-        "Oil",
-        "Pasta",
-        "Pork",
-        "Ready-To-Eat",
-        "Rice",
-        "Seasonings",
-        "Snacks",
-        "Soups",
-        "Spirits",
-        "Sugar & Sweeteners",
-        "Sweets",
-        "Tea",
-        "Uht Milk",
-        "Vegetables",
-        "Water",
-        "Wine",
-        "Yoghurt",
-    ]
-
-    _SUBCAT_TO_CATEGORY = {
-        "Fruits": Category.FRUITS,
-        "Vegetables": Category.VEGETABLES,
-        "Fresh Milk": Category.DAIRY,
-        "Cheese": Category.DAIRY,
-        "Yoghurt": Category.DAIRY,
-        "Chicken": Category.MEAT,
-        "Beef & Lamb": Category.MEAT,
-        "Pork": Category.MEAT,
-        "Fish & Seafood": Category.SEAFOOD,
-        "Frozen Seafood": Category.SEAFOOD,
-        "Rice": Category.GRAINS,
-        "Pasta": Category.GRAINS,
-        "Noodles": Category.GRAINS,
-        "Oil": Category.STAPLES,
-        "Seasonings": Category.STAPLES,
-        "Cooking Paste & Sauces": Category.STAPLES,
-        "Baking Needs": Category.STAPLES,
-        "Frozen Food": Category.FROZEN,
-        "Frozen Meat": Category.FROZEN,
-        "Frozen Desserts": Category.FROZEN,
-        "Ice Cream": Category.FROZEN,
-        "Beverages": Category.BEVERAGES,
-        "Juices": Category.BEVERAGES,
-        "Coffee": Category.BEVERAGES,
-        "Tea": Category.BEVERAGES,
-        "Water": Category.BEVERAGES,
-        "Beer": Category.BEVERAGES,
-        "Wine": Category.BEVERAGES,
-        "Spirits": Category.BEVERAGES,
-        "Snacks": Category.SNACKS,
-        "Biscuits": Category.SNACKS,
-        "Sweets": Category.SNACKS,
-        "Chocolates": Category.SNACKS,
-    }
 
     @inject
     def __init__(
@@ -156,7 +62,7 @@ class ReceiptService:
     ) -> List[Dict[str, Any]]:
         cleaned = receipt_json.get("Items", [])
         items = [str(it.get("ITEM", "")).replace("\n", " ") for it in cleaned]
-        subcats = ", ".join(f'"{c}"' for c in self._SUBCATEGORIES)
+        subcats = ", ".join(f'"{c}"' for c in SUBCATEGORIES)
         prompt = """You are a helpful assistant trained to classify receipt items from Singapore supermarkets.\n"""
         prompt += "Use this context to determine whether an item is a food or non-food item and assign a sub-category.\n"
         prompt += "For each item, return JSON with fields ITEM, CATEGORY, SUBCATEGORY, QUANTITY.\n"
@@ -187,4 +93,4 @@ class ReceiptService:
     def _map_subcategory(self, subcat: str | None) -> Category:
         if not subcat:
             return Category.OTHER
-        return self._SUBCAT_TO_CATEGORY.get(subcat, Category.OTHER)
+        return SUBCAT_TO_CATEGORY.get(subcat, Category.OTHER)
