@@ -1,8 +1,17 @@
 # Constants for receipt processing
 
+from enum import Enum
 from typing import Dict
 
 from src.core.pantry.constants import Category
+
+
+class ReceiptStatus(str, Enum):
+    """Status of a receipt in the processing pipeline."""
+
+    PROCESSED = "processed"
+    PENDING = "pending"
+
 
 SUBCATEGORIES = [
     "Baby & Toddler Food",
