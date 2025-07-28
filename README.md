@@ -2,12 +2,21 @@
 
 **PantryPal** is a smart pantry assistant that helps users manage their grocery inventory, predict expiry dates, get personalized recipe suggestions, and interact with a conversational assistant for food-related queries.
 
-This repository contains the **FastAPI backend** services powering the PantryPal system. It exposes RESTful APIs for inventory management, recipe recommendation, and a chatbot powered by a local LLaMA model.
+This repository contains the **FastAPI backend** services powering the PantryPal system. It exposes RESTful APIs for inventory management, recipe recommendation, and a chatbot backed by a hosted LLaMA model via the Groq API.
+
+For user and developer guides, visit the [documentation](docs/index.md).
+
+---
+
+## 🌐 Web App
+
+PantryPal has a separate React frontend that consumes these APIs. You can find it here: [twhjames/pantrypal-web-app](https://github.com/twhjames/pantrypal-web-app).
 
 ---
 
 ## 📚 Table of Contents
 
+-   [🌐 Web App](#-web-app)
 -   [🚀 Features](#-features)
 -   [🛠️ Tech Stack](#️-tech-stack)
 -   [🧱 Software Architecture](#-software-architecture)
@@ -38,7 +47,7 @@ This repository contains the **FastAPI backend** services powering the PantryPal
     -   Secure password hashing and session management
 -   🧾 Receipt Processing Pipeline
     -   Short-lived AWS S3 upload URLs for receipt images
-    -   POC AWS endpoints for uploading receipts and polling results
+    -   POC microservice (AWS API Gateway + Lambda) for uploading receipts and polling results
     -   AWS Textract OCR to extract receipt content
     -   Webhook to classify OCR results and add items to the pantry
 
@@ -468,7 +477,7 @@ Tests are organized by feature and layer, mirroring the structure of the source 
 
 -   **Unit Tests** focus on core business logic in `src/core/<feature>/services/`, using mocks for external dependencies such as accessors or LLMs.
 -   **Integration Tests** validate concrete implementations of ports/adapters (e.g., database accessors, Groq provider) to ensure proper system interactions.
--   **API Tests** use `httpx.AsyncClient` to test FastAPI routes asynchronously, covering authentication, chatbot functionality, and configuration endpoints.
+-   **API Tests** use `httpx.AsyncClient` to test FastAPI routes asynchronously, covering authentication, chatbot functionality, and pantry endpoints.
 -   **Admin Tests** verify that the SQLAdmin dashboard loads correctly and supports basic CRUD operations on registered models.
 
 ### 🧪 Running the Test Suite
