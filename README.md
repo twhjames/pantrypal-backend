@@ -4,7 +4,7 @@
 
 This repository contains the **FastAPI backend** services powering the PantryPal system. It exposes RESTful APIs for inventory management, recipe recommendation, and a chatbot backed by a hosted LLaMA model via the Groq API.
 
-For user and developer guides, visit the [documentation](docs/index.md).
+For user and developer guides, visit the [documentation](https://twhjames.github.io/pantrypal-backend/).
 
 ---
 
