@@ -12,6 +12,7 @@ from src.pantrypal_api.admin.chatbot.chat_history_admin import ChatHistoryAdmin
 from src.pantrypal_api.admin.chatbot.chat_session_admin import ChatSessionAdmin
 from src.pantrypal_api.admin.configuration.configuration_admin import ConfigurationAdmin
 from src.pantrypal_api.admin.pantry.pantry_item_admin import PantryItemAdmin
+from src.pantrypal_api.admin.receipt.receipt_result_admin import ReceiptResultAdmin
 
 
 def setup_admin(app: FastAPI, db_provider: IDatabaseProvider):
@@ -34,6 +35,7 @@ def setup_admin(app: FastAPI, db_provider: IDatabaseProvider):
     admin.add_view(ChatSessionAdmin)
     admin.add_view(ConfigurationAdmin)
     admin.add_view(PantryItemAdmin)
+    admin.add_view(ReceiptResultAdmin)
 
 
 class PantryPalAdminSite(Admin):

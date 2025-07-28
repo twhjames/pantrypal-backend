@@ -7,6 +7,7 @@ from src.pantrypal_api.configuration.modules import ConfigurationModule
 from src.pantrypal_api.expiry.modules import ExpiryModule
 from src.pantrypal_api.logging.modules import LoggingModule
 from src.pantrypal_api.pantry.modules import PantryModule
+from src.pantrypal_api.receipt.modules import ReceiptModule
 from src.pantrypal_api.storage.modules import StorageModule
 
 injector = Injector(
@@ -17,6 +18,7 @@ injector = Injector(
         ConfigurationModule,
         ExpiryModule,
         PantryModule,
+        ReceiptModule,
         StorageModule,
         LoggingModule,
     ]
