@@ -31,6 +31,7 @@ class ReceiptGatewayService:
         self.gateway_provider = gateway_provider
         self.receipt_result_accessor = receipt_result_accessor
 
+    # TODO: Prevent same receipt upload (both image file and image's content)
     async def upload_receipt(
         self, user_id: int, image_base64: str
     ) -> Optional[Dict[str, Any]]:

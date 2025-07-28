@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+from ast import literal_eval
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from injector import inject
@@ -10,6 +12,7 @@ from src.core.chatbot.constants import ChatbotMessageRole
 from src.core.chatbot.ports.chatbot_provider import IChatbotProvider
 from src.core.chatbot.specs import ChatMessageSpec
 from src.core.common.utils import DateTimeUtils
+from src.core.expiry.services.expiry_prediction_service import ExpiryPredictionService
 from src.core.logging.ports.logging_provider import ILoggingProvider
 from src.core.pantry.constants import Category, Unit
 from src.core.pantry.services.pantry_service import PantryService
@@ -26,10 +29,12 @@ class ReceiptService:
         pantry_service: PantryService,
         chatbot_provider: IChatbotProvider,
         logging_provider: ILoggingProvider,
+        expiry_service: ExpiryPredictionService,
     ) -> None:
         self.pantry_service = pantry_service
         self.chatbot_provider = chatbot_provider
         self.logging_provider = logging_provider
+        self.expiry_service = expiry_service
 
     async def process_receipt_webhook(
         self, user_id: int, receipt_json: Dict[str, Any]
@@ -45,16 +50,26 @@ class ReceiptService:
             )
             raise
 
-        specs = [
-            AddPantryItemSpec(
-                item_name=item.get("ITEM", ""),
-                quantity=float(item.get("QUANTITY", 1)),
-                unit=Unit.PIECES,
-                category=self._map_subcategory(item.get("SUBCATEGORY")),
-            )
-            for item in classified
-        ]
+        specs: List[AddPantryItemSpec] = []
+        purchase_date = self._parse_purchase_date(receipt_json.get("Date"))
 
+        for item in classified:
+            qty = self._parse_quantity(item.get("QUANTITY"))
+            category = self._map_subcategory(item.get("SUBCATEGORY"))
+            expiry = await self.expiry_service.get_expiry_date(
+                category=category,
+                purchase_date=purchase_date.date(),
+            )
+            specs.append(
+                AddPantryItemSpec(
+                    item_name=item.get("ITEM", ""),
+                    quantity=qty,
+                    unit=Unit.PIECES,
+                    category=category,
+                    purchase_date=purchase_date,
+                    expiry_date=datetime.combine(expiry, datetime.min.time()),
+                )
+            )
         await self.pantry_service.add_items(user_id, specs)
 
     async def _classify_receipt_items(
@@ -79,16 +94,80 @@ class ReceiptService:
         )
         reply = await self.chatbot_provider.handle_single_turn(message)
         json_str = self._extract_json(reply)
-        return json.loads(json_str)
+
+        obj = json.loads(json_str)
+        if isinstance(obj, dict) and "items" in obj:
+            obj = obj["items"]
+        if not isinstance(obj, list):
+            raise ValueError("Classification did not return a list")
+        return obj
+
+    def _safe_load_json(self, candidate: str) -> Any | None:
+        """Attempt to parse a JSON or Python literal string."""
+        for parser in (json.loads, literal_eval):
+            try:
+                return parser(candidate)
+            except Exception:  # pragma: no cover - best effort parsing
+                continue
+        return None
 
     def _extract_json(self, text: str) -> str:
-        match = re.search(r"```(?:json)?\s*(\[\s*{.*?}\s*\])\s*```", text, re.DOTALL)
-        if match:
-            return match.group(1)
-        match = re.search(r"(\[\s*{.*?}\s*\])", text, re.DOTALL)
-        if match:
-            return match.group(1)
-        raise ValueError("No valid JSON array found in response")
+        """Extract a JSON array or list of objects from an LLM response."""
+        # Prefer fenced blocks if present
+        blocks = re.findall(r"```(?:json)?\s*([\s\S]+?)\s*```", text)
+        if not blocks:
+            blocks = [text]
+
+        for block in blocks:
+            block = block.strip()
+            if not block:
+                continue
+
+            # Direct JSON array
+            match = re.search(r"\[\s*{.*?}\s*\]", block, re.DOTALL)
+            if match:
+                parsed = self._safe_load_json(match.group(0))
+                if isinstance(parsed, list):
+                    return json.dumps(parsed)
+
+            # Entire block might be valid JSON
+            parsed = self._safe_load_json(block)
+            if isinstance(parsed, list):
+                return json.dumps(parsed)
+            if isinstance(parsed, dict):
+                return json.dumps(parsed)
+
+            # Look for numbered objects like "1. {...}"
+            item_strs = re.findall(r"\{[^{}]*\}", block)
+            parsed_items = [self._safe_load_json(s) for s in item_strs]
+            parsed_items = [p for p in parsed_items if isinstance(p, dict)]
+            if parsed_items:
+                return json.dumps(parsed_items)
+
+        raise ValueError("No valid JSON list found in response")
+
+    def _parse_quantity(self, value: Any) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            nums = re.findall(r"\d+(?:\.\d+)?", str(value))
+            if nums:
+                try:
+                    return float(nums[0])
+                except Exception:
+                    pass
+        return 1.0
+
+    def _parse_purchase_date(self, value: Any) -> datetime:
+        """Parse the purchase date from receipt data or fall back to now."""
+        if isinstance(value, str):
+            for fmt in ("%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d"):
+                try:
+                    dt = datetime.strptime(value, fmt)
+                    return dt.replace(tzinfo=timezone.utc)
+                except Exception:
+                    continue
+        return DateTimeUtils.get_utc_now()
 
     def _map_subcategory(self, subcat: str | None) -> Category:
         if not subcat:

@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -15,10 +16,14 @@ async def test_process_receipt_webhook_adds_items():
         return_value='[{"ITEM": "Apple", "QUANTITY": 1}]'
     )
 
+    expiry_service = MagicMock()
+    expiry_service.get_expiry_date = AsyncMock(return_value=date.today())
+
     service = ReceiptService(
         pantry_service=pantry_service,
         chatbot_provider=chatbot_provider,
         logging_provider=MagicMock(),
+        expiry_service=expiry_service,
     )
 
     receipt_json = {"Items": [{"ITEM": "Apple"}]}
@@ -26,3 +31,4 @@ async def test_process_receipt_webhook_adds_items():
 
     assert pantry_service.add_items.await_count == 1
     chatbot_provider.handle_single_turn.assert_awaited()
+    expiry_service.get_expiry_date.assert_awaited()

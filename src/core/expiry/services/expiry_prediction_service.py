@@ -1,5 +1,6 @@
-from collections.abc import Mapping
 from datetime import date
+
+from injector import inject
 
 from src.core.expiry.constants import SupermarketType
 from src.core.expiry.ports.expiry_prediction_provider import IExpiryPredictionProvider
@@ -14,12 +15,11 @@ class ExpiryPredictionService:
     based on supermarket type, and falls back to static prediction if unavailable.
     """
 
+    @inject
     def __init__(
         self,
         fallback_expiry_provider: IExpiryPredictionProvider,
-        supermarket_expiry_provider: Mapping[
-            SupermarketType, ISupermarketExpiryProvider
-        ],
+        supermarket_expiry_provider: dict[SupermarketType, ISupermarketExpiryProvider],
         logging_provider: ILoggingProvider,
     ):
         self.fallback_expiry_provider = fallback_expiry_provider
