@@ -1,5 +1,6 @@
 import json
 import re
+from ast import literal_eval
 from datetime import datetime
 from typing import List, Optional
 
@@ -88,9 +89,25 @@ class ChatbotService:
                 enriched = message
 
             messages = self.__prepend_format_instruction([enriched])
-            reply = await self.chatbot_provider.handle_multi_turn(messages)
+            raw_reply = await self.chatbot_provider.handle_multi_turn(messages)
             self.logging_provider.debug("LLM reply generated for recipe recommendation")
-            session_data = self.__parse_recipe_reply(reply, message.user_id)
+
+            clean_reply = self._extract_json(raw_reply)
+            if clean_reply is None:
+                self.logging_provider.error(
+                    "Failed to extract recipe JSON from LLM reply",
+                    extra_data={"reply": raw_reply},
+                )
+                return raw_reply, None
+
+            session_data = self.__parse_recipe_reply(clean_reply, message.user_id)
+
+            if session_data is None:
+                self.logging_provider.error(
+                    "Failed to parse recipe JSON from LLM reply",
+                    extra_data={"reply": clean_reply},
+                )
+                return clean_reply, None
             new_chat_session = await self.chat_session_service.create_session(
                 session_data
             )
@@ -106,14 +123,14 @@ class ChatbotService:
             assistant_message = self.__create_chat_message_spec(
                 user_id=message.user_id,
                 role=ChatbotMessageRole.ASSISTANT,
-                content=reply,
+                content=clean_reply,
                 timestamp=reply_timestamp,
                 session_id=new_chat_session.id,
             )
             await self.chatbot_history_accessor.save_message(assistant_message)
             self.logging_provider.debug("Assistant message saved to chat history")
 
-            return reply, new_chat_session.id
+            return clean_reply, new_chat_session.id
         except Exception as e:
             self.logging_provider.error(f"Error in get_first_recommendation: {str(e)}")
             raise
@@ -246,8 +263,11 @@ class ChatbotService:
         self, reply: str, user_id: int
     ) -> Optional[ChatSessionDomain]:
         """Return a ChatSessionDomain if reply contains recipe JSON."""
+        json_str = self._extract_json(reply)
+        if json_str is None:
+            return None
         try:
-            data = json.loads(reply)
+            data = json.loads(json_str)
         except Exception:
             return None
 
@@ -284,3 +304,34 @@ class ChatbotService:
                 "total_ingredients", len(data.get("ingredients", []))
             ),
         )
+
+    def _extract_json(self, text: str) -> str | None:
+        """Extract a JSON object from an LLM response."""
+        blocks = re.findall(r"```(?:json)?\s*([\s\S]+?)\s*```", text)
+        if not blocks:
+            blocks = [text]
+
+        for block in blocks:
+            block = block.strip()
+            if not block:
+                continue
+
+            parsed = self._safe_load_json(block)
+            if isinstance(parsed, (dict, list)):
+                return json.dumps(parsed)
+
+            match = re.search(r"\{[\s\S]*\}", block)
+            if match:
+                parsed = self._safe_load_json(match.group(0))
+                if isinstance(parsed, (dict, list)):
+                    return json.dumps(parsed)
+        return None
+
+    def _safe_load_json(self, candidate: str):
+        """Attempt to parse JSON or Python literal string."""
+        for parser in (json.loads, literal_eval):
+            try:
+                return parser(candidate)
+            except Exception:  # pragma: no cover
+                continue
+        return None
